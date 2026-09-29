@@ -1,4 +1,4 @@
-<?php
+<!-- <?php
 
 include "includes/cek_session.php";
 
@@ -99,4 +99,12 @@ $role = $_SESSION["role"];
 
 </body>
 
-</html>
+</html> -->
+
+
+
+<?php
+
+echo "DASHBOARD BERHASIL DIBUKA";
+
+?>
