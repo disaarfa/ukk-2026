@@ -1,110 +1,55 @@
-<!-- <?php
+<?php
+require_once 'koneksi.php';
 
-include "includes/cek_session.php";
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
 
-$nama = $_SESSION["nama"];
-$role = $_SESSION["role"];
-
+$role = $_SESSION['role'];
+$nama = $_SESSION['nama_user'];
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <title>Dashboard - Sistem Informasi Pelanggaran Siswa</title>
-
+    <title>Dashboard</title>
 </head>
-
 <body>
 
-    <h1>Dashboard</h1>
-
-    <p>
-        Selamat datang,
-        <b><?= htmlspecialchars($nama); ?></b>
-    </p>
-
-    <p>
-        Role:
-        <b><?= htmlspecialchars($role); ?></b>
-    </p>
-
+    <h2> Dashboard</h2>
+    <p>Pengguna: <strong><?= htmlspecialchars($nama); ?></strong> | Akses: <strong><?= strtoupper(htmlspecialchars($role)); ?></strong></p>
     <hr>
 
+    <h3>Menu Navigasi:</h3>
+    <ul>
+        <li><a href="dashboard.php">Dashboard</a></li>
 
-    <?php if ($role === "admin"): ?>
+        <?php if ($role === 'admin'): ?>
+            <!-- Menu Khusus Admin -->
+            <li><a href="kelola_siswa.php">Kelola Siswa</a></li>
+            <li><a href="kelola_guru.php">Kelola Guru</a></li>
+            <li><a href="kelola_kelas.php">Kelola Kelas</a></li>
+            <li><a href="kelola_tahun_ajaran.php">Kelola Tahun Ajaran</a></li>
+            <li><a href="penempatan_siswa.php">Penempatan Siswa</a></li>
+            <li><a href="kelola_wali_kelas.php">Kelola Wali Kelas</a></li>
+            <li><a href="kelola_kategori.php">Kelola Kategori Pelanggaran</a></li>
+            <li><a href="kelola_jenis_pelanggaran.php">Kelola Jenis Pelanggaran</a></li>
+            <li><a href="cetak_export.php">Cetak / Export</a></li>
+        <?php endif; ?>
 
-        <h2>Menu Admin</h2>
+        <?php if ($role === 'guru' || $role === 'admin'): ?>
+            <!-- Menu Guru & Admin -->
+            <li><a href="catat_pelanggaran.php">Catat Pelanggaran</a></li>
+            <li><a href="tindakan.php">Tindakan</a></li>
+            <li><a href="laporan.php">Laporan</a></li>
+            <li><a href="riwayat.php">Riwayat</a></li>
+            <li><a href="rekap_poin.php">Rekap Poin</a></li>
+        <?php endif; ?>
 
-        <ul>
-
-            <li>
-                <a href="menu1.php">
-                    Menu 1
-                </a>
-            </li>
-
-            <li>
-                <a href="menu2.php">
-                    Menu 2
-                </a>
-            </li>
-
-            <li>
-                <a href="menu3.php">
-                    Menu 3
-                </a>
-            </li>
-
-            <li>
-                <a href="menu4.php">
-                    Menu 4
-                </a>
-            </li>
-
-        </ul>
-
-
-    <?php elseif ($role === "guru"): ?>
-
-        <h2>Menu Guru</h2>
-
-        <ul>
-
-            <li>
-                <a href="menu3.php">
-                    Menu 3
-                </a>
-            </li>
-
-            <li>
-                <a href="menu4.php">
-                    Menu 4
-                </a>
-            </li>
-
-        </ul>
-
-    <?php endif; ?>
-
-
-    <hr>
-
-    <a href="logout.php">
-        Logout
-    </a>
+        <li><a href="logout.php">Logout</a></li>
+    </ul>
 
 </body>
-
-</html> -->
-
-
-
-<?php
-
-echo "DASHBOARD BERHASIL DIBUKA";
-
-?>
+</html>
