@@ -1,3 +1,4 @@
+
 <?php
 require_once 'koneksi.php';
 
@@ -35,16 +36,74 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html>
-<head><title>Login</title></head>
-<body>
-    <h2>Login Sistem Pelanggaran</h2>
-    <?php if ($error): ?><p style="color:red;"><?= $error; ?></p><?php endif; ?>
-    <form method="POST">
-        <label>Email:</label><br>
-        <input type="text" name="email" required><br><br>
-        <label>Password:</label><br>
-        <input type="password" name="password" required><br><br>
-        <button type="submit">Login</button>
-    </form>
+<head>
+<title>Login</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" 
+rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+</head>
+
+<body class="bg-light">
+<div class="p-3 mb-2 bg-primary text-white">
+    
+
+<div class="container text-center min-vh-100 d-flex justify-content-center align-items-center">
+
+    <div class="card shadow-lg border-0 rounded-4 p-4 w-100"
+         style="max-width: 400px;">
+
+        <div class="card-body">
+
+            <h2 class="fw-bold mb-4">
+                Login Sistem Pelanggaran
+            </h2>
+
+            <?php if ($error): ?>
+                <p class="alert alert-danger">
+                    <?= $error; ?>
+                </p>
+            <?php endif; ?>
+
+            <form method="POST">
+
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-semibold">
+                        Email:
+                    </label>
+
+                    <input type="text"
+                           name="email"
+                           class="form-control rounded-3"
+                           placeholder="Masukkan email"
+                           required>
+                </div>
+
+                <div class="mb-4 text-start">
+                    <label class="form-label fw-semibold">
+                        Password:
+                    </label>
+
+                    <input type="password"
+                           name="password"
+                           class="form-control rounded-3"
+                           placeholder="Masukkan password"
+                           required>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-success w-100 rounded-3 py-2">
+                    Login
+                </button>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
 </body>
 </html>
