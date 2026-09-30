@@ -1,4 +1,3 @@
-
 <?php
 require_once 'koneksi.php';
 
@@ -37,23 +36,120 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>Login</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" 
-rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+rel="stylesheet" 
+integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" 
+crossorigin="anonymous">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<style>
+
+    html,
+    body {
+        width: 100%;
+        min-height: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background-color: #4CA3C7 !important;
+    }
+
+    /* CONTAINER LOGIN */
+    .container-login {
+        width: 100%;
+        min-height: 100vh;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* CARD LOGIN */
+    .card {
+        background-color: #ffffff;
+        width: 100%;
+        max-width: 350px !important;
+
+        border: none !important;
+        border-radius: 12px !important;
+
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.20) !important;
+    }
+
+    /* JUDUL */
+    .card h2 {
+        font-size: 22px;
+        color: #111111;
+    }
+
+    /* LABEL */
+    .form-label {
+        font-size: 12px;
+        margin-bottom: 5px;
+        color: #333333;
+    }
+
+    /* INPUT */
+    .form-control {
+        background-color: #DEE0E2;
+
+        border: none !important;
+        border-radius: 9px !important;
+
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    /* INPUT SAAT DIKLIK */
+    .form-control:focus {
+        background-color: #DEE0E2;
+
+        border: none !important;
+
+        box-shadow: 0 0 0 2px rgba(0, 153, 206, 0.25) !important;
+    }
+
+    /* TOMBOL LOGIN */
+    .btn-success {
+        background-color: #0099CE !important;
+
+        border: none !important;
+        border-radius: 9px !important;
+
+        box-shadow: 0 3px 4px rgba(0, 0, 0, 0.20);
+
+        font-size: 12px;
+        font-weight: bold;
+
+        padding: 10px !important;
+    }
+
+    /* TOMBOL SAAT MOUSE DIARAHKAN */
+    .btn-success:hover {
+        background-color: #0085B5 !important;
+    }
+
+    /* PESAN ERROR */
+    .alert-danger {
+        font-size: 12px;
+    }
+
+</style>
+
 </head>
 
-<body class="bg-light">
-<div class="p-3 mb-2 bg-primary text-white">
-    
+<body>
 
-<div class="container text-center min-vh-100 d-flex justify-content-center align-items-center">
+<div class="container-login">
 
-    <div class="card shadow-lg border-0 rounded-4 p-4 w-100"
-         style="max-width: 400px;">
+    <div class="card shadow-lg rounded-4 p-4">
 
         <div class="card-body">
 
@@ -70,6 +166,7 @@ rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAv
             <form method="POST">
 
                 <div class="mb-3 text-start">
+
                     <label class="form-label fw-semibold">
                         Email:
                     </label>
@@ -79,9 +176,11 @@ rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAv
                            class="form-control rounded-3"
                            placeholder="Masukkan email"
                            required>
+
                 </div>
 
                 <div class="mb-4 text-start">
+
                     <label class="form-label fw-semibold">
                         Password:
                     </label>
@@ -91,6 +190,7 @@ rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAv
                            class="form-control rounded-3"
                            placeholder="Masukkan password"
                            required>
+
                 </div>
 
                 <button type="submit"
@@ -101,6 +201,7 @@ rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAv
             </form>
 
         </div>
+
     </div>
 
 </div>
