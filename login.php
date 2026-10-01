@@ -1,147 +1,210 @@
 <?php
 require_once 'koneksi.php';
 
+/*
+|--------------------------------------------------------------------------
+| Jika sudah login, langsung ke dashboard
+|--------------------------------------------------------------------------
+*/
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard.php");
     exit();
 }
 
 $error = '';
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = mysqli_real_escape_string($koneksi, trim($_POST['email']));
-    $password = trim($_POST['password']);
+
+/*
+|--------------------------------------------------------------------------
+| PROSES LOGIN
+|--------------------------------------------------------------------------
+*/
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $email = trim($_POST['email'] ?? '');
+    $password = trim($_POST['password'] ?? '');
+
+    $email = mysqli_real_escape_string($koneksi, $email);
 
     $query = "SELECT * FROM t_users WHERE email = '$email' LIMIT 1";
     $result = mysqli_query($koneksi, $query);
 
     if ($result && mysqli_num_rows($result) > 0) {
+
         $user = mysqli_fetch_assoc($result);
-        
-        // Cek password hash atau plain text 123456
-        if (password_verify($password, $user['password']) || $password === $user['password'] || $password === '123456') {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cek password
+        |--------------------------------------------------------------------------
+        */
+        $password_benar = false;
+
+        if (password_verify($password, $user['password'])) {
+            $password_benar = true;
+        }
+
+        /*
+        | Untuk database yang password-nya masih plain text
+        */
+        if ($password === $user['password']) {
+            $password_benar = true;
+        }
+
+        /*
+        | Password default 123456
+        */
+        if ($password === '123456') {
+            $password_benar = true;
+        }
+
+        if ($password_benar) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | HAPUS SESSION LAMA
+            |--------------------------------------------------------------------------
+            */
+            session_unset();
+
+            /*
+            |--------------------------------------------------------------------------
+            | BUAT SESSION BARU SESUAI DATABASE
+            |--------------------------------------------------------------------------
+            */
             $_SESSION['user_id']   = $user['id'];
             $_SESSION['nama_user'] = $user['name'];
-            $_SESSION['role']      = strtolower($user['role']);
+            $_SESSION['email']     = $user['email'];
+            $_SESSION['role']      = strtolower(trim($user['role']));
+
+            /*
+            |--------------------------------------------------------------------------
+            | Masuk dashboard
+            |--------------------------------------------------------------------------
+            */
             header("Location: dashboard.php");
             exit();
-        } else { 
-            $error = "Password salah!"; 
+
+        } else {
+
+            $error = "Password salah!";
         }
-    } else { 
-        $error = "Email tidak ditemukan!"; 
+
+    } else {
+
+        $error = "Email tidak ditemukan!";
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
+
 <head>
 
-<title>Login</title>
+    <meta charset="UTF-8">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" 
-rel="stylesheet" 
-integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" 
-crossorigin="anonymous">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Sistem Pelanggaran</title>
 
-<style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+          crossorigin="anonymous">
 
-    html,
-    body {
-        width: 100%;
-        min-height: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
+    <style>
 
-    body {
-        background-color: #4CA3C7 !important;
-    }
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
 
-    /* CONTAINER LOGIN */
-    .container-login {
-        width: 100%;
-        min-height: 100vh;
+        body {
+            background-color: #4CA3C7 !important;
+        }
 
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+        .container-login {
+            width: 100%;
+            min-height: 100vh;
 
-    /* CARD LOGIN */
-    .card {
-        background-color: #ffffff;
-        width: 100%;
-        max-width: 350px !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        border: none !important;
-        border-radius: 12px !important;
+        .card {
+            background-color: #ffffff;
 
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.20) !important;
-    }
+            width: 100%;
+            max-width: 350px !important;
 
-    /* JUDUL */
-    .card h2 {
-        font-size: 22px;
-        color: #111111;
-    }
+            border: none !important;
+            border-radius: 12px !important;
 
-    /* LABEL */
-    .form-label {
-        font-size: 12px;
-        margin-bottom: 5px;
-        color: #333333;
-    }
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.20) !important;
+        }
 
-    /* INPUT */
-    .form-control {
-        background-color: #DEE0E2;
+        .card h2 {
+            font-size: 22px;
+            color: #111111;
+        }
 
-        border: none !important;
-        border-radius: 9px !important;
+        .form-label {
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #333333;
+        }
 
-        padding: 10px 12px;
-        font-size: 12px;
-    }
+        .form-control {
+            background-color: #DEE0E2;
 
-    /* INPUT SAAT DIKLIK */
-    .form-control:focus {
-        background-color: #DEE0E2;
+            border: none !important;
+            border-radius: 9px !important;
 
-        border: none !important;
+            padding: 10px 12px;
 
-        box-shadow: 0 0 0 2px rgba(0, 153, 206, 0.25) !important;
-    }
+            font-size: 12px;
+        }
 
-    /* TOMBOL LOGIN */
-    .btn-success {
-        background-color: #0099CE !important;
+        .form-control:focus {
+            background-color: #DEE0E2;
 
-        border: none !important;
-        border-radius: 9px !important;
+            border: none !important;
 
-        box-shadow: 0 3px 4px rgba(0, 0, 0, 0.20);
+            box-shadow:
+                0 0 0 2px rgba(0, 153, 206, 0.25) !important;
+        }
 
-        font-size: 12px;
-        font-weight: bold;
+        .btn-success {
+            background-color: #0099CE !important;
 
-        padding: 10px !important;
-    }
+            border: none !important;
+            border-radius: 9px !important;
 
-    /* TOMBOL SAAT MOUSE DIARAHKAN */
-    .btn-success:hover {
-        background-color: #0085B5 !important;
-    }
+            box-shadow:
+                0 3px 4px rgba(0, 0, 0, 0.20);
 
-    /* PESAN ERROR */
-    .alert-danger {
-        font-size: 12px;
-    }
+            font-size: 12px;
+            font-weight: bold;
 
-</style>
+            padding: 10px !important;
+        }
+
+        .btn-success:hover {
+            background-color: #0085B5 !important;
+        }
+
+        .alert-danger {
+            font-size: 12px;
+        }
+
+    </style>
 
 </head>
 
@@ -158,9 +221,11 @@ crossorigin="anonymous">
             </h2>
 
             <?php if ($error): ?>
-                <p class="alert alert-danger">
-                    <?= $error; ?>
-                </p>
+
+                <div class="alert alert-danger">
+                    <?= htmlspecialchars($error); ?>
+                </div>
+
             <?php endif; ?>
 
             <form method="POST">
@@ -171,11 +236,13 @@ crossorigin="anonymous">
                         Email:
                     </label>
 
-                    <input type="text"
-                           name="email"
-                           class="form-control rounded-3"
-                           placeholder="Masukkan email"
-                           required>
+                    <input
+                        type="email"
+                        name="email"
+                        class="form-control rounded-3"
+                        placeholder="Masukkan email"
+                        required
+                    >
 
                 </div>
 
@@ -185,16 +252,19 @@ crossorigin="anonymous">
                         Password:
                     </label>
 
-                    <input type="password"
-                           name="password"
-                           class="form-control rounded-3"
-                           placeholder="Masukkan password"
-                           required>
+                    <input
+                        type="password"
+                        name="password"
+                        class="form-control rounded-3"
+                        placeholder="Masukkan password"
+                        required
+                    >
 
                 </div>
 
-                <button type="submit"
-                        class="btn btn-success w-100 rounded-3 py-2">
+                <button
+                    type="submit"
+                    class="btn btn-success w-100 rounded-3 py-2">
                     Login
                 </button>
 
@@ -207,4 +277,5 @@ crossorigin="anonymous">
 </div>
 
 </body>
+
 </html>
