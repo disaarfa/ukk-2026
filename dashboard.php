@@ -1325,13 +1325,6 @@ body {
         <h2 class="page-title mb-1">
             <?= e(ucwords(str_replace('_', ' ', $page))) ?>
         </h2>
-
-        <small class="text-secondary">
-            Login sebagai:
-            <strong><?= e($nama) ?></strong>
-            —
-            <?= e(strtoupper($role)) ?>
-        </small>
     </div>
 
 </div>
@@ -1352,9 +1345,24 @@ body {
 
 <?php if ($page === 'dashboard'): ?>
 
-<h2 class="page-title">
+<!-- <h2 class="page-title">
     Dashboard
-</h2>
+</h2> -->
+
+<div class="dashboard-card">
+
+    <h4>
+        Selamat Datang
+    </h4>
+
+    <p class="mb-0">
+        Halo,
+        <strong><?= e($nama) ?></strong>.
+        Kamu login sebagai
+        <strong><?= e(ucfirst($role)) ?></strong>.
+    </p>
+
+</div>
 
 <div class="row">
 
@@ -1416,22 +1424,6 @@ body {
         </div>
 
     </div>
-
-</div>
-
-
-<div class="dashboard-card">
-
-    <h4>
-        Selamat Datang
-    </h4>
-
-    <p class="mb-0">
-        Halo,
-        <strong><?= e($nama) ?></strong>.
-        Kamu login sebagai
-        <strong><?= e(ucfirst($role)) ?></strong>.
-    </p>
 
 </div>
 
@@ -4067,7 +4059,7 @@ while ($r = mysqli_fetch_assoc($q)):
 <div class="about-header">
 
 <h3>
-About
+About Me
 </h3>
 
 <p class="mb-0">
@@ -4081,7 +4073,7 @@ Tentang Saya
 </h5>
 
 <p>
-Halo, aku Arfa.
+Halo, Aku arfa boleh di panggil afaa biar ga ribet,asal jangan di panggil sayang takut baper
 </p>
 
 <p>
@@ -4090,7 +4082,7 @@ Nama: <strong>Arfa Disa Okamameliza</strong>
 
 <p>
 Tempat, tanggal lahir:
-<strong>Tasikmalaya, 9 Oktober 2008</strong>
+<strong>Tasikmalaya, 09 Oktober 2008</strong>
 </p>
 
 <p>
@@ -4098,14 +4090,24 @@ Alamat:
 <strong>Cieunteung Gede</strong>
 </p>
 
+<p>
+Sekolah:
+<strong>SMK Muhammadiyah Tasikmalaya</strong>
+</p>
+
+<p>
+Kelas/Jurusan:
+<strong>XII RPL 2, Rekayasa Perangkat Lunak</strong>
+</p>
+
 <h5 class="mt-4">
 Hobi
 </h5>
 
 <ul>
-<li>Tidur</li>
-<li>Bernyanyi</li>
-<li>Scrolling</li>
+<li>Tidur / Ketiduran</li>
+<li>Bernyanyi Walau Suara Berserakan</li>
+<li>Scrolling Sosmed</li>
 </ul>
 
 </div>
