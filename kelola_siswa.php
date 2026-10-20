@@ -195,16 +195,21 @@ Tidak Aktif
 
 <thead>
 
+
+<thead>
 <tr>
-<th>No</th>
-<th>NIS</th>
-<th>NISN</th>
-<th>Nama</th>
-<th>JK</th>
-<th>Tanggal Lahir</th>
-<th>Status</th>
-<th>Aksi</th>
+    <th>No</th>
+    <th>NIS</th>
+    <th>NISN</th>
+    <th>Nama</th>
+    <th>JK</th>
+    <th>Tanggal Lahir</th>
+    <th>Alamat</th>
+    <th>Status</th>
+    <th>Aksi</th>
 </tr>
+</thead>
+
 
 </thead>
 
@@ -238,6 +243,8 @@ while ($r = mysqli_fetch_assoc($q)):
 
 <td><?= e($r['tanggal_lahir']) ?></td>
 
+<td><?= e($r['alamat'] ?? '') ?></td>
+
 <td>
 
 <?php if ($r['status_aktif']): ?>
@@ -265,10 +272,11 @@ Tidak Aktif
     Edit
 </a>
 
+
 <a
-    href="dashboard.php?page=kelola_siswa&hapus=siswa&id=<?= $r['id'] ?>"
+    href="dashboard.php?page=kelola_siswa&hapus=siswa&id=<?= (int)$r['id'] ?>"
     class="btn btn-delete btn-sm"
-    onclick="return confirm('Yakin ingin menghapus siswa ini?')"
+    onclick="return confirm('Yakin ingin menonaktifkan siswa ini? Data dan riwayat pelanggaran tetap disimpan.')"
 >
     Hapus
 </a>

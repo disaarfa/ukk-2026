@@ -192,12 +192,15 @@ class="btn btn-edit btn-sm">
 Edit
 </a>
 
+
 <a
-href="dashboard.php?page=kelola_kelas&hapus=kelas&id=<?= $r['id'] ?>"
-class="btn btn-delete btn-sm"
-onclick="return confirm('Yakin ingin menghapus kelas ini?')">
-Hapus
+    href="hapus_siswa.php?id=<?= (int)$r['id'] ?>"
+    class="btn btn-delete btn-sm"
+    onclick="return confirm('Yakin ingin menghapus siswa ini secara permanen?')"
+>
+    Hapus
 </a>
+
 
 </td>
 

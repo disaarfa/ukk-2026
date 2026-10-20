@@ -126,52 +126,71 @@ function e($text)
     );
 }
 
-/* ====================
+
+
+/* =========================================================
    HAPUS DATA
-   ==================== */
+========================================================= */
 
 if (
-    $role === 'admin' &&
-    isset($_GET['hapus']) &&
-    isset($_GET['id'])
+    isset($_GET['hapus'], $_GET['id']) &&
+    $role === 'admin'
 ) {
-
     $jenis = $_GET['hapus'];
-    $id = (int)$_GET['id'];
+    $id = (int) $_GET['id'];
 
     $tabel = [
-        'siswa' => 't_siswa',
-        'guru' => 't_guru',
-        'kelas' => 't_kelas',
-        'tahun' => 't_tahun_ajaran',
-        'kategori' => 't_pelanggaran_kategori',
+        'siswa'       => 't_siswa',
+        'guru'        => 't_guru',
+        'kelas'       => 't_kelas',
+        'tahun'       => 't_tahun_ajaran',
+        'kategori'    => 't_pelanggaran_kategori',
         'pelanggaran' => 't_pelanggaran',
-        'penempatan' => 't_kelas_siswa',
-        'wali' => 't_wali_kelas'
+        'penempatan'  => 't_kelas_siswa',
+        'wali'        => 't_wali_kelas'
     ];
 
-    if (isset($tabel[$jenis])) {
-
+    if ($id <= 0) {
+        $error = "ID data tidak valid.";
+    } elseif (!isset($tabel[$jenis])) {
+        $error = "Jenis data yang akan dihapus tidak ditemukan.";
+    } else {
         $nama_tabel = $tabel[$jenis];
 
-        $hapus_query = mysqli_query(
+        $stmt = mysqli_prepare(
             $koneksi,
-            "DELETE FROM `$nama_tabel` WHERE id='$id'"
+            "DELETE FROM `$nama_tabel` WHERE id = ?"
         );
 
-        if (!$hapus_query) {
-            $error = "Data tidak bisa dihapus karena masih digunakan oleh data lain.";
+        if (!$stmt) {
+            $error = "Query gagal disiapkan: " .
+                     mysqli_error($koneksi);
+        } else {
+            mysqli_stmt_bind_param($stmt, "i", $id);
+
+            $berhasil = mysqli_stmt_execute($stmt);
+            $jumlah = mysqli_stmt_affected_rows($stmt);
+            $pesan_mysql = mysqli_stmt_error($stmt);
+
+            mysqli_stmt_close($stmt);
+
+            if (!$berhasil) {
+                $error = "Data gagal dihapus. Penyebab: " .
+                         $pesan_mysql;
+            } elseif ($jumlah === 0) {
+                $error = "Data tidak ditemukan atau sudah dihapus.";
+            } else {
+                header(
+                    "Location: dashboard.php?page=" .
+                    urlencode($page) .
+                    "&hapus_berhasil=1"
+                );
+                exit;
+            }
         }
     }
-
-    if (!$error) {
-        header(
-            "Location: dashboard.php?page=" .
-            urlencode($page)
-        );
-        exit;
-    }
 }
+
 
 /* ============
    CRUD SISWA
@@ -1303,7 +1322,7 @@ body {
 <div class="col-md-3 col-lg-2 sidebar">
 
     <div class="sidebar-title">
-        Sistem Pelanggaran
+        Sistem Informasi Pelanggaran Siswa
     </div>
 
     <div class="menu-title">
