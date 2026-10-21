@@ -1,308 +1,208 @@
 <?php /* Halaman penempatan_siswa; dipanggil melalui dashboard.php */ ?>
 
-
 <?php
-
 $data_edit = null;
 
 if ($edit_id > 0) {
-
     $qe = mysqli_query(
         $koneksi,
-        "SELECT * FROM t_kelas_siswa
-         WHERE id='$edit_id'
-         LIMIT 1"
+        "SELECT * FROM t_kelas_siswa WHERE id='$edit_id' LIMIT 1"
     );
-
     $data_edit = mysqli_fetch_assoc($qe);
 }
-
 ?>
 
 <div class="form-box">
+    <h4><?= $data_edit ? 'Edit Penempatan' : 'Tambah Penempatan' ?></h4>
 
-<h4>
-<?= $data_edit ? 'Edit Penempatan' : 'Tambah Penempatan' ?>
-</h4>
+    <form method="POST">
+        <input type="hidden" name="aksi" value="<?= $data_edit ? 'edit' : 'tambah' ?>">
 
-<form method="POST">
+        <?php if ($data_edit): ?>
+            <input type="hidden" name="id" value="<?= $data_edit['id'] ?>">
+        <?php endif; ?>
 
-<input
-type="hidden"
-name="aksi"
-value="<?= $data_edit ? 'edit' : 'tambah' ?>"
->
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label>Siswa</label>
+                <select name="siswa_id" class="form-select" required>
+                    <?php
+                    $qs_penempatan = mysqli_query(
+                        $koneksi,
+                        "SELECT id,nama FROM t_siswa ORDER BY nama ASC"
+                    );
+                    while ($s = mysqli_fetch_assoc($qs_penempatan)):
+                    ?>
+                        <option value="<?= $s['id'] ?>"
+                            <?= (($data_edit['siswa_id'] ?? '') == $s['id']) ? 'selected' : '' ?>>
+                            <?= e($s['nama']) ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
 
-<?php if ($data_edit): ?>
+            <div class="col-md-4 mb-3">
+                <label>Tahun Ajaran</label>
+                <select name="tahun_ajaran_id" class="form-select" required>
+                    <?php
+                    $qt_penempatan = mysqli_query(
+                        $koneksi,
+                        "SELECT id,nama FROM t_tahun_ajaran ORDER BY id DESC"
+                    );
+                    while ($t = mysqli_fetch_assoc($qt_penempatan)):
+                    ?>
+                        <option value="<?= $t['id'] ?>"
+                            <?= (($data_edit['tahun_ajaran_id'] ?? '') == $t['id']) ? 'selected' : '' ?>>
+                            <?= e($t['nama']) ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
 
-<input
-type="hidden"
-name="id"
-value="<?= $data_edit['id'] ?>"
->
+            <div class="col-md-4 mb-3">
+                <label>Kelas</label>
+                <select name="kelas_id" class="form-select" required>
+                    <?php
+                    $qk_penempatan = mysqli_query(
+                        $koneksi,
+                        "SELECT id,nama FROM t_kelas ORDER BY nama ASC"
+                    );
+                    while ($k = mysqli_fetch_assoc($qk_penempatan)):
+                    ?>
+                        <option value="<?= $k['id'] ?>"
+                            <?= (($data_edit['kelas_id'] ?? '') == $k['id']) ? 'selected' : '' ?>>
+                            <?= e($k['nama']) ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
 
-<?php endif; ?>
+            <div class="col-md-4 mb-3">
+                <label>Tanggal Mulai</label>
+                <input type="date" name="tanggal_mulai" class="form-control"
+                    value="<?= e($data_edit['tanggal_mulai'] ?? '') ?>">
+            </div>
 
-<div class="row">
+            <div class="col-md-4 mb-3">
+                <label>Tanggal Selesai</label>
+                <input type="date" name="tanggal_selesai" class="form-control"
+                    value="<?= e($data_edit['tanggal_selesai'] ?? '') ?>">
+            </div>
 
-<div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3">
+                <label>Status</label>
+                <select name="status_aktif" class="form-select">
+                    <option value="1" <?= (($data_edit['status_aktif'] ?? 1) == 1) ? 'selected' : '' ?>>Aktif</option>
+                    <option value="0" <?= (($data_edit['status_aktif'] ?? 1) == 0) ? 'selected' : '' ?>>Tidak Aktif</option>
+                </select>
+            </div>
+        </div>
 
-<label>Siswa</label>
+        <button class="btn btn-soft"><?= $data_edit ? 'Update' : 'Tambah' ?></button>
 
-<select name="siswa_id" class="form-select" required>
+        <?php if ($data_edit): ?>
+            <a href="dashboard.php?page=penempatan_siswa" class="btn btn-secondary">Batal</a>
+        <?php endif; ?>
+    </form>
+</div>
 
 <?php
+$per_halaman_penempatan = 10;
 
-$qs = mysqli_query(
-    $koneksi,
-    "SELECT id,nama FROM t_siswa
-     ORDER BY nama ASC"
-);
+$total_query_penempatan = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_kelas_siswa");
+$total_data_penempatan = (int) mysqli_fetch_assoc($total_query_penempatan)['total'];
 
-while ($s = mysqli_fetch_assoc($qs)):
+$total_halaman_penempatan = max(1, (int) ceil($total_data_penempatan / $per_halaman_penempatan));
+$halaman_penempatan = max(1, (int) ($_GET['halaman'] ?? 1));
+$halaman_penempatan = min($halaman_penempatan, $total_halaman_penempatan);
+$offset_penempatan = ($halaman_penempatan - 1) * $per_halaman_penempatan;
 
-?>
-
-<option
-value="<?= $s['id'] ?>"
-<?= (($data_edit['siswa_id'] ?? '') == $s['id']) ? 'selected' : '' ?>
->
-<?= e($s['nama']) ?>
-</option>
-
-<?php endwhile; ?>
-
-</select>
-
-</div>
-
-<div class="col-md-4 mb-3">
-
-<label>Tahun Ajaran</label>
-
-<select
-name="tahun_ajaran_id"
-class="form-select"
-required
->
-
-<?php
-
-$qt = mysqli_query(
-    $koneksi,
-    "SELECT id,nama FROM t_tahun_ajaran
-     ORDER BY id DESC"
-);
-
-while ($t = mysqli_fetch_assoc($qt)):
-
-?>
-
-<option
-value="<?= $t['id'] ?>"
-<?= (($data_edit['tahun_ajaran_id'] ?? '') == $t['id']) ? 'selected' : '' ?>
->
-<?= e($t['nama']) ?>
-</option>
-
-<?php endwhile; ?>
-
-</select>
-
-</div>
-
-<div class="col-md-4 mb-3">
-
-<label>Kelas</label>
-
-<select
-name="kelas_id"
-class="form-select"
-required
->
-
-<?php
-
-$qk = mysqli_query(
-    $koneksi,
-    "SELECT id,nama FROM t_kelas
-     ORDER BY nama ASC"
-);
-
-while ($k = mysqli_fetch_assoc($qk)):
-
-?>
-
-<option
-value="<?= $k['id'] ?>"
-<?= (($data_edit['kelas_id'] ?? '') == $k['id']) ? 'selected' : '' ?>
->
-<?= e($k['nama']) ?>
-</option>
-
-<?php endwhile; ?>
-
-</select>
-
-</div>
-
-<div class="col-md-4 mb-3">
-
-<label>Tanggal Mulai</label>
-
-<input
-type="date"
-name="tanggal_mulai"
-class="form-control"
-value="<?= e($data_edit['tanggal_mulai'] ?? '') ?>"
->
-
-</div>
-
-<div class="col-md-4 mb-3">
-
-<label>Tanggal Selesai</label>
-
-<input
-type="date"
-name="tanggal_selesai"
-class="form-control"
-value="<?= e($data_edit['tanggal_selesai'] ?? '') ?>"
->
-
-</div>
-
-<div class="col-md-4 mb-3">
-
-<label>Status</label>
-
-<select name="status_aktif" class="form-select">
-
-<option value="1"
-<?= (($data_edit['status_aktif'] ?? 1) == 1) ? 'selected' : '' ?>>
-Aktif
-</option>
-
-<option value="0"
-<?= (($data_edit['status_aktif'] ?? 1) == 0) ? 'selected' : '' ?>>
-Tidak Aktif
-</option>
-
-</select>
-
-</div>
-
-</div>
-
-<button class="btn btn-soft">
-<?= $data_edit ? 'Update' : 'Tambah' ?>
-</button>
-
-<?php if ($data_edit): ?>
-
-<a
-href="dashboard.php?page=penempatan_siswa"
-class="btn btn-secondary">
-Batal
-</a>
-
-<?php endif; ?>
-
-</form>
-
-</div>
-
-
-<div class="table-box">
-
-<h4>Data Penempatan Siswa</h4>
-
-<div class="table-responsive">
-
-<table class="table table-bordered">
-
-<thead>
-
-<tr>
-<th>No</th>
-<th>Siswa</th>
-<th>Tahun Ajaran</th>
-<th>Kelas</th>
-<th>Status</th>
-<th>Aksi</th>
-</tr>
-
-</thead>
-
-<tbody>
-
-<?php
-
-$no = 1;
-
-$q = mysqli_query($koneksi, "
+$q_penempatan = mysqli_query($koneksi, "
     SELECT
         ks.*,
         s.nama AS nama_siswa,
         k.nama AS nama_kelas,
         ta.nama AS tahun
     FROM t_kelas_siswa ks
-    LEFT JOIN t_siswa s
-        ON ks.siswa_id=s.id
-    LEFT JOIN t_kelas k
-        ON ks.kelas_id=k.id
-    LEFT JOIN t_tahun_ajaran ta
-        ON ks.tahun_ajaran_id=ta.id
+    LEFT JOIN t_siswa s ON ks.siswa_id=s.id
+    LEFT JOIN t_kelas k ON ks.kelas_id=k.id
+    LEFT JOIN t_tahun_ajaran ta ON ks.tahun_ajaran_id=ta.id
     ORDER BY ks.id DESC
+    LIMIT $offset_penempatan, $per_halaman_penempatan
 ");
 
-while ($r = mysqli_fetch_assoc($q)):
-
+$nomor_penempatan = $offset_penempatan + 1;
 ?>
 
-<tr>
+<div class="table-box">
+    <h4>Data Penempatan Siswa</h4>
 
-<td><?= $no++ ?></td>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Siswa</th>
+                    <th>Tahun Ajaran</th>
+                    <th>Kelas</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($total_data_penempatan > 0): ?>
+                    <?php while ($r = mysqli_fetch_assoc($q_penempatan)): ?>
+                        <tr>
+                            <td><?= $nomor_penempatan++ ?></td>
+                            <td><?= e($r['nama_siswa'] ?? '') ?></td>
+                            <td><?= e($r['tahun'] ?? '') ?></td>
+                            <td><?= e($r['nama_kelas'] ?? '') ?></td>
+                            <td>
+                                <?= $r['status_aktif']
+                                    ? '<span class="badge bg-success">Aktif</span>'
+                                    : '<span class="badge bg-secondary">Tidak Aktif</span>' ?>
+                            </td>
+                            <td>
+                                <a href="dashboard.php?page=penempatan_siswa&edit=<?= $r['id'] ?>"
+                                   class="btn btn-edit btn-sm">Edit</a>
 
-<td><?= e($r['nama_siswa']) ?></td>
+                                <a href="dashboard.php?page=penempatan_siswa&hapus=penempatan&id=<?= $r['id'] ?>"
+                                   class="btn btn-delete btn-sm"
+                                   onclick="return confirm('Yakin ingin menghapus penempatan ini?')">Hapus</a>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" class="text-center">Belum ada data penempatan siswa.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 
-<td><?= e($r['tahun']) ?></td>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+        <small>
+            Menampilkan <?= $total_data_penempatan ? $offset_penempatan + 1 : 0 ?>–<?= min($offset_penempatan + $per_halaman_penempatan, $total_data_penempatan) ?>
+            dari <?= $total_data_penempatan ?> data
+        </small>
 
-<td><?= e($r['nama_kelas']) ?></td>
+        <nav aria-label="Pagination penempatan siswa">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item <?= $halaman_penempatan <= 1 ? 'disabled' : '' ?>">
+                    <a class="page-link" href="dashboard.php?page=penempatan_siswa&halaman=<?= max(1, $halaman_penempatan - 1) ?>">Sebelumnya</a>
+                </li>
 
-<td>
+                <?php for ($i = 1; $i <= $total_halaman_penempatan; $i++): ?>
+                    <li class="page-item <?= $i == $halaman_penempatan ? 'active' : '' ?>">
+                        <a class="page-link" href="dashboard.php?page=penempatan_siswa&halaman=<?= $i ?>"><?= $i ?></a>
+                    </li>
+                <?php endfor; ?>
 
-<?= $r['status_aktif']
-? '<span class="badge bg-success">Aktif</span>'
-: '<span class="badge bg-secondary">Tidak Aktif</span>' ?>
-
-</td>
-
-<td>
-
-<a
-href="dashboard.php?page=penempatan_siswa&edit=<?= $r['id'] ?>"
-class="btn btn-edit btn-sm">
-Edit
-</a>
-
-<a
-href="dashboard.php?page=penempatan_siswa&hapus=penempatan&id=<?= $r['id'] ?>"
-class="btn btn-delete btn-sm"
-onclick="return confirm('Yakin ingin menghapus penempatan ini?')">
-Hapus
-</a>
-
-</td>
-
-</tr>
-
-<?php endwhile; ?>
-
-</tbody>
-
-</table>
-
-</div>
-
+                <li class="page-item <?= $halaman_penempatan >= $total_halaman_penempatan ? 'disabled' : '' ?>">
+                    <a class="page-link" href="dashboard.php?page=penempatan_siswa&halaman=<?= min($total_halaman_penempatan, $halaman_penempatan + 1) ?>">Selanjutnya</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </div>

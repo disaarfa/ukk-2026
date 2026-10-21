@@ -87,35 +87,57 @@ if (!in_array($page, $allowed_pages)) {
     $page = 'dashboard';
 }
 
-
 /* =====================
    EXPORT LAPORAN CSV
    ===================== */
+
 if ($page === 'laporan' && ($_GET['export'] ?? '') === 'csv') {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="laporan_pelanggaran_siswa.csv"');
+
     $output = fopen('php://output', 'w');
-    // BOM agar karakter Bahasa Indonesia terbaca dengan baik di Excel.
+
     fwrite($output, "\xEF\xBB\xBF");
-    fputcsv($output, ['No', 'Siswa', 'Kelas', 'Pelanggaran', 'Poin', 'Tanggal', 'Status']);
-    $export_q = mysqli_query($koneksi, "SELECT * FROM t_pelanggaran_siswa ORDER BY tanggal DESC, id DESC");
+
+    fputcsv($output, [
+        'No',
+        'Siswa',
+        'Kelas',
+        'Pelanggaran',
+        'Poin',
+        'Tanggal',
+        'Status'
+    ]);
+
+    $export_q = mysqli_query(
+        $koneksi,
+        "SELECT * FROM t_pelanggaran_siswa
+         ORDER BY tanggal DESC, id DESC"
+    );
+
     $no_export = 1;
+
     if ($export_q) {
         while ($row_export = mysqli_fetch_assoc($export_q)) {
             fputcsv($output, [
-                $no_export++, $row_export['nama_siswa'] ?? '',
-                $row_export['nama_kelas'] ?? '', $row_export['nama_pelanggaran'] ?? '',
-                $row_export['poin'] ?? '', $row_export['tanggal'] ?? '', $row_export['status'] ?? ''
+                $no_export++,
+                $row_export['nama_siswa'] ?? '',
+                $row_export['nama_kelas'] ?? '',
+                $row_export['nama_pelanggaran'] ?? '',
+                $row_export['poin'] ?? '',
+                $row_export['tanggal'] ?? '',
+                $row_export['status'] ?? ''
             ]);
         }
     }
+
     fclose($output);
     exit;
 }
 
 /* ======================
    FUNGSI ESCAPE
-   ======================= */
+   ====================== */
 
 function e($text)
 {
@@ -126,18 +148,16 @@ function e($text)
     );
 }
 
-
-
 /* =========================================================
    HAPUS DATA
-========================================================= */
+   ========================================================= */
 
 if (
     isset($_GET['hapus'], $_GET['id']) &&
     $role === 'admin'
 ) {
     $jenis = $_GET['hapus'];
-    $id = (int) $_GET['id'];
+    $id = (int)$_GET['id'];
 
     $tabel = [
         'siswa'       => 't_siswa',
@@ -191,7 +211,6 @@ if (
     }
 }
 
-
 /* ============
    CRUD SISWA
    ============ */
@@ -201,7 +220,6 @@ if (
     $page === 'kelola_siswa' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $aksi = $_POST['aksi'] ?? '';
 
     $nis = mysqli_real_escape_string(
@@ -237,36 +255,21 @@ if (
     $status = (int)($_POST['status_aktif'] ?? 1);
 
     if ($aksi === 'tambah') {
-
         mysqli_query($koneksi, "
             INSERT INTO t_siswa
             (
-                nis,
-                nisn,
-                nama,
-                jenis_kelamin,
-                tanggal_lahir,
-                alamat,
-                status_aktif,
-                created_at,
-                updated_at
+                nis, nisn, nama, jenis_kelamin,
+                tanggal_lahir, alamat, status_aktif,
+                created_at, updated_at
             )
             VALUES
             (
-                '$nis',
-                '$nisn',
-                '$nama_siswa',
-                '$jk',
-                '$tanggal',
-                '$alamat',
-                '$status',
-                NOW(),
-                NOW()
+                '$nis', '$nisn', '$nama_siswa', '$jk',
+                '$tanggal', '$alamat', '$status',
+                NOW(), NOW()
             )
         ");
-
     } elseif ($aksi === 'edit') {
-
         $id = (int)$_POST['id'];
 
         mysqli_query($koneksi, "
@@ -289,14 +292,13 @@ if (
 
 /* ===============
    CRUD GURU
-   ===============*/
+   =============== */
 
 if (
     $role === 'admin' &&
     $page === 'kelola_guru' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $aksi = $_POST['aksi'] ?? '';
 
     $nip = mysqli_real_escape_string(
@@ -317,30 +319,19 @@ if (
     $status = (int)($_POST['status_aktif'] ?? 1);
 
     if ($aksi === 'tambah') {
-
         mysqli_query($koneksi, "
             INSERT INTO t_guru
             (
-                nip,
-                nama,
-                email,
-                status_aktif,
-                created_at,
-                updated_at
+                nip, nama, email, status_aktif,
+                created_at, updated_at
             )
             VALUES
             (
-                '$nip',
-                '$nama_guru',
-                '$email_guru',
-                '$status',
-                NOW(),
-                NOW()
+                '$nip', '$nama_guru', '$email_guru',
+                '$status', NOW(), NOW()
             )
         ");
-
     } elseif ($aksi === 'edit') {
-
         $id = (int)$_POST['id'];
 
         mysqli_query($koneksi, "
@@ -360,14 +351,13 @@ if (
 
 /* ================
    CRUD KELAS
-================= */
+   ================ */
 
 if (
     $role === 'admin' &&
     $page === 'kelola_kelas' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $aksi = $_POST['aksi'] ?? '';
 
     $nama_kelas = mysqli_real_escape_string(
@@ -388,30 +378,19 @@ if (
     $status = (int)($_POST['status_aktif'] ?? 1);
 
     if ($aksi === 'tambah') {
-
         mysqli_query($koneksi, "
             INSERT INTO t_kelas
             (
-                nama,
-                tingkat,
-                jurusan,
-                status_aktif,
-                created_at,
-                updated_at
+                nama, tingkat, jurusan, status_aktif,
+                created_at, updated_at
             )
             VALUES
             (
-                '$nama_kelas',
-                '$tingkat',
-                '$jurusan',
-                '$status',
-                NOW(),
-                NOW()
+                '$nama_kelas', '$tingkat', '$jurusan',
+                '$status', NOW(), NOW()
             )
         ");
-
     } elseif ($aksi === 'edit') {
-
         $id = (int)$_POST['id'];
 
         mysqli_query($koneksi, "
@@ -438,7 +417,6 @@ if (
     $page === 'kelola_tahun_ajaran' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $aksi = $_POST['aksi'] ?? '';
 
     $nama = mysqli_real_escape_string(
@@ -459,30 +437,19 @@ if (
     $status = (int)($_POST['status_aktif'] ?? 1);
 
     if ($aksi === 'tambah') {
-
         mysqli_query($koneksi, "
             INSERT INTO t_tahun_ajaran
             (
-                nama,
-                tanggal_mulai,
-                tanggal_selesai,
-                status_aktif,
-                created_at,
-                updated_at
+                nama, tanggal_mulai, tanggal_selesai,
+                status_aktif, created_at, updated_at
             )
             VALUES
             (
-                '$nama',
-                '$mulai',
-                '$selesai',
-                '$status',
-                NOW(),
-                NOW()
+                '$nama', '$mulai', '$selesai',
+                '$status', NOW(), NOW()
             )
         ");
-
     } elseif ($aksi === 'edit') {
-
         $id = (int)$_POST['id'];
 
         mysqli_query($koneksi, "
@@ -496,22 +463,18 @@ if (
         ");
     }
 
-    header(
-        "Location: dashboard.php?page=kelola_tahun_ajaran"
-    );
+    header("Location: dashboard.php?page=kelola_tahun_ajaran");
     exit;
 }
-
 /* ===============
    CRUD KATEGORI
    =============== */
 
-if (
+   if (
     $role === 'admin' &&
     $page === 'kelola_kategori' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $aksi = $_POST['aksi'] ?? '';
 
     $nama = mysqli_real_escape_string(
@@ -527,28 +490,19 @@ if (
     $status = (int)($_POST['status_aktif'] ?? 1);
 
     if ($aksi === 'tambah') {
-
         mysqli_query($koneksi, "
             INSERT INTO t_pelanggaran_kategori
             (
-                nama,
-                deskripsi,
-                status_aktif,
-                created_at,
-                updated_at
+                nama, deskripsi, status_aktif,
+                created_at, updated_at
             )
             VALUES
             (
-                '$nama',
-                '$deskripsi',
-                '$status',
-                NOW(),
-                NOW()
+                '$nama', '$deskripsi', '$status',
+                NOW(), NOW()
             )
         ");
-
     } elseif ($aksi === 'edit') {
-
         $id = (int)$_POST['id'];
 
         mysqli_query($koneksi, "
@@ -561,9 +515,7 @@ if (
         ");
     }
 
-    header(
-        "Location: dashboard.php?page=kelola_kategori"
-    );
+    header("Location: dashboard.php?page=kelola_kategori");
     exit;
 }
 
@@ -576,12 +528,8 @@ if (
     $page === 'kelola_jenis_pelanggaran' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $aksi = $_POST['aksi'] ?? '';
-
-    $kategori = (int)(
-        $_POST['pelanggaran_kategori_id'] ?? 0
-    );
+    $kategori = (int)($_POST['pelanggaran_kategori_id'] ?? 0);
 
     $kode = mysqli_real_escape_string(
         $koneksi,
@@ -603,34 +551,19 @@ if (
     $status = (int)($_POST['status_aktif'] ?? 1);
 
     if ($aksi === 'tambah') {
-
         mysqli_query($koneksi, "
             INSERT INTO t_pelanggaran
             (
-                pelanggaran_kategori_id,
-                kode,
-                nama,
-                poin,
-                deskripsi,
-                status_aktif,
-                created_at,
-                updated_at
+                pelanggaran_kategori_id, kode, nama, poin,
+                deskripsi, status_aktif, created_at, updated_at
             )
             VALUES
             (
-                '$kategori',
-                '$kode',
-                '$nama',
-                '$poin',
-                '$deskripsi',
-                '$status',
-                NOW(),
-                NOW()
+                '$kategori', '$kode', '$nama', '$poin',
+                '$deskripsi', '$status', NOW(), NOW()
             )
         ");
-
     } elseif ($aksi === 'edit') {
-
         $id = (int)$_POST['id'];
 
         mysqli_query($koneksi, "
@@ -646,9 +579,7 @@ if (
         ");
     }
 
-    header(
-        "Location: dashboard.php?page=kelola_jenis_pelanggaran"
-    );
+    header("Location: dashboard.php?page=kelola_jenis_pelanggaran");
     exit;
 }
 
@@ -661,9 +592,7 @@ if (
     $page === 'penempatan_siswa' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $aksi = $_POST['aksi'] ?? '';
-
     $siswa = (int)($_POST['siswa_id'] ?? 0);
     $tahun = (int)($_POST['tahun_ajaran_id'] ?? 0);
     $kelas = (int)($_POST['kelas_id'] ?? 0);
@@ -681,34 +610,21 @@ if (
     $status = (int)($_POST['status_aktif'] ?? 1);
 
     if ($aksi === 'tambah') {
-
         mysqli_query($koneksi, "
             INSERT INTO t_kelas_siswa
             (
-                siswa_id,
-                tahun_ajaran_id,
-                kelas_id,
-                tanggal_mulai,
-                tanggal_selesai,
-                status_aktif,
-                created_at,
-                updated_at
+                siswa_id, tahun_ajaran_id, kelas_id,
+                tanggal_mulai, tanggal_selesai, status_aktif,
+                created_at, updated_at
             )
             VALUES
             (
-                '$siswa',
-                '$tahun',
-                '$kelas',
-                '$mulai',
-                '$selesai',
-                '$status',
-                NOW(),
-                NOW()
+                '$siswa', '$tahun', '$kelas',
+                '$mulai', '$selesai', '$status',
+                NOW(), NOW()
             )
         ");
-
     } elseif ($aksi === 'edit') {
-
         $id = (int)$_POST['id'];
 
         mysqli_query($koneksi, "
@@ -724,9 +640,7 @@ if (
         ");
     }
 
-    header(
-        "Location: dashboard.php?page=penempatan_siswa"
-    );
+    header("Location: dashboard.php?page=penempatan_siswa");
     exit;
 }
 
@@ -739,9 +653,7 @@ if (
     $page === 'kelola_wali_kelas' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $aksi = $_POST['aksi'] ?? '';
-
     $tahun = (int)($_POST['tahun_ajaran_id'] ?? 0);
     $kelas = (int)($_POST['kelas_id'] ?? 0);
     $guru = (int)($_POST['guru_id'] ?? 0);
@@ -759,34 +671,21 @@ if (
     $status = (int)($_POST['status_aktif'] ?? 1);
 
     if ($aksi === 'tambah') {
-
         mysqli_query($koneksi, "
             INSERT INTO t_wali_kelas
             (
-                tahun_ajaran_id,
-                kelas_id,
-                guru_id,
-                tanggal_mulai,
-                tanggal_selesai,
-                status_aktif,
-                created_at,
-                updated_at
+                tahun_ajaran_id, kelas_id, guru_id,
+                tanggal_mulai, tanggal_selesai, status_aktif,
+                created_at, updated_at
             )
             VALUES
             (
-                '$tahun',
-                '$kelas',
-                '$guru',
-                '$mulai',
-                '$selesai',
-                '$status',
-                NOW(),
-                NOW()
+                '$tahun', '$kelas', '$guru',
+                '$mulai', '$selesai', '$status',
+                NOW(), NOW()
             )
         ");
-
     } elseif ($aksi === 'edit') {
-
         $id = (int)$_POST['id'];
 
         mysqli_query($koneksi, "
@@ -802,9 +701,7 @@ if (
         ");
     }
 
-    header(
-        "Location: dashboard.php?page=kelola_wali_kelas"
-    );
+    header("Location: dashboard.php?page=kelola_wali_kelas");
     exit;
 }
 
@@ -817,7 +714,6 @@ if (
     $page === 'catat_pelanggaran' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $siswa_id = (int)($_POST['siswa_id'] ?? 0);
     $pel_id = (int)($_POST['pelanggaran_id'] ?? 0);
 
@@ -834,8 +730,7 @@ if (
     $guru_id = 0;
 
     $qg = mysqli_query($koneksi, "
-        SELECT id
-        FROM t_guru
+        SELECT id FROM t_guru
         WHERE user_id='$user_id'
         LIMIT 1
     ");
@@ -845,12 +740,7 @@ if (
         $guru_id = (int)$dg['id'];
     }
 
-    /*
-     * Jika admin tidak terhubung ke t_guru,
-     * gunakan guru pertama yang tersedia.
-     */
     if ($guru_id === 0) {
-
         $qg2 = mysqli_query(
             $koneksi,
             "SELECT id FROM t_guru
@@ -872,32 +762,24 @@ if (
             s.nama AS nama_siswa,
             k.nama AS nama_kelas
         FROM t_kelas_siswa ks
-        JOIN t_siswa s
-            ON ks.siswa_id=s.id
-        JOIN t_kelas k
-            ON ks.kelas_id=k.id
+        JOIN t_siswa s ON ks.siswa_id=s.id
+        JOIN t_kelas k ON ks.kelas_id=k.id
         WHERE ks.siswa_id='$siswa_id'
         AND ks.status_aktif=1
         LIMIT 1
     ");
 
-    $siswa_data = mysqli_fetch_assoc($qs);
+    $siswa_data = $qs ? mysqli_fetch_assoc($qs) : null;
 
     $qp = mysqli_query($koneksi, "
-        SELECT *
-        FROM t_pelanggaran
+        SELECT * FROM t_pelanggaran
         WHERE id='$pel_id'
         LIMIT 1
     ");
 
-    $pel_data = mysqli_fetch_assoc($qp);
+    $pel_data = $qp ? mysqli_fetch_assoc($qp) : null;
 
-    if (
-        $siswa_data &&
-        $pel_data &&
-        $guru_id > 0
-    ) {
-
+    if ($siswa_data && $pel_data && $guru_id > 0) {
         $nama_siswa_db = mysqli_real_escape_string(
             $koneksi,
             $siswa_data['nama_siswa']
@@ -918,32 +800,17 @@ if (
             $nama
         );
 
-        $kategori_id = (int)$pel_data[
-            'pelanggaran_kategori_id'
-        ];
-
+        $kategori_id = (int)$pel_data['pelanggaran_kategori_id'];
         $poin = (int)$pel_data['poin'];
 
         mysqli_query($koneksi, "
             INSERT INTO t_pelanggaran_siswa
             (
-                tahun_ajaran_id,
-                siswa_id,
-                nama_siswa,
-                kelas_id,
-                nama_kelas,
-                pelanggaran_id,
-                nama_pelanggaran,
-                pelanggaran_kategori_id,
-                guru_id,
-                nama_guru,
-                tanggal,
-                keterangan,
-                poin,
-                tindakan,
-                status,
-                created_at,
-                updated_at
+                tahun_ajaran_id, siswa_id, nama_siswa,
+                kelas_id, nama_kelas, pelanggaran_id,
+                nama_pelanggaran, pelanggaran_kategori_id,
+                guru_id, nama_guru, tanggal, keterangan,
+                poin, tindakan, status, created_at, updated_at
             )
             VALUES
             (
@@ -968,9 +835,7 @@ if (
         ");
     }
 
-    header(
-        "Location: dashboard.php?page=catat_pelanggaran"
-    );
+    header("Location: dashboard.php?page=catat_pelanggaran");
     exit;
 }
 
@@ -983,7 +848,6 @@ if (
     $page === 'tindakan' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-
     $id = (int)($_POST['id'] ?? 0);
 
     $tindakan = mysqli_real_escape_string(
@@ -1004,44 +868,31 @@ if (
         WHERE id='$id'
     ");
 
-    header(
-        "Location: dashboard.php?page=tindakan"
-    );
+    header("Location: dashboard.php?page=tindakan");
     exit;
 }
 
+
 /* ==================
    DATA DASHBOARD
-  =================== */
+   ================== */
 
 $jml_siswa = 0;
 $jml_guru = 0;
 $jml_kelas = 0;
 $jml_pelanggaran = 0;
 
-$q = mysqli_query(
-    $koneksi,
-    "SELECT COUNT(*) AS total FROM t_siswa"
-);
-
+$q = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_siswa");
 if ($q) {
     $jml_siswa = mysqli_fetch_assoc($q)['total'];
 }
 
-$q = mysqli_query(
-    $koneksi,
-    "SELECT COUNT(*) AS total FROM t_guru"
-);
-
+$q = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_guru");
 if ($q) {
     $jml_guru = mysqli_fetch_assoc($q)['total'];
 }
 
-$q = mysqli_query(
-    $koneksi,
-    "SELECT COUNT(*) AS total FROM t_kelas"
-);
-
+$q = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_kelas");
 if ($q) {
     $jml_kelas = mysqli_fetch_assoc($q)['total'];
 }
@@ -1050,433 +901,390 @@ $q = mysqli_query(
     $koneksi,
     "SELECT COUNT(*) AS total FROM t_pelanggaran_siswa"
 );
-
 if ($q) {
     $jml_pelanggaran = mysqli_fetch_assoc($q)['total'];
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta charset="UTF-8">
+    <title>Sistem Informasi Pelanggaran Siswa</title>
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<title>
-    Sistem Informasi Pelanggaran Siswa
-</title>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
 
-<link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-    rel="stylesheet"
->
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f0f6ff;
+            color: #263b59;
+        }
 
-<style>
+        /* SIDEBAR */
+        .sidebar {
+            background: #e2efff;
+            min-height: 100vh;
+            padding: 20px 15px;
+            position: sticky;
+            top: 0;
+            border-right: 1px solid #cbdff8;
+        }
 
-html {
-    scroll-behavior: smooth;
-}
+        .sidebar-title {
+            color: #234b7b;
+            font-size: 21px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
 
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f5f7fa;
-}
+        .menu-title {
+            color: #7188a6;
+            font-size: 12px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
 
-/* SIDEBAR */
+        .menu-link {
+            display: block;
+            color: #365577;
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            transition: 0.2s;
+        }
 
-.sidebar {
-    background: #20252b;
-    min-height: 100vh;
-    padding: 20px 15px;
-    position: sticky;
-    top: 0;
-}
+        .menu-link:hover {
+            background: #bdd9ff;
+            color: #17365d;
+        }
 
-.sidebar-title {
-    color: white;
-    font-size: 21px;
-    font-weight: bold;
-    margin-bottom: 25px;
-}
+        .menu-link.active {
+            background: #8bbcff;
+            color: #17365d;
+            font-weight: bold;
+        }
 
-.menu-title {
-    color: #aeb8c4;
-    font-size: 12px;
-    margin-top: 15px;
-    margin-bottom: 8px;
-}
+        /* CONTENT */
+        .content {
+            padding: 30px;
+        }
 
-.menu-link {
-    display: block;
-    color: #f1f5f9;
-    text-decoration: none;
-    padding: 10px 14px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-}
+        .page-title {
+            color: #234b7b;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
 
-.menu-link:hover {
-    background: #bdd9ff;
-    color: #17365d;
-}
+        /* CARD */
+        .dashboard-card {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
+            margin-bottom: 20px;
+            border: 1px solid #e1ebf8;
+        }
 
-.menu-link.active {
-    background: #8bbcff;
-    color: #17365d;
-    font-weight: bold;
-}
+        .card-siswa {
+            background: #dceeff;
+        }
 
-/* CONTENT */
+        .card-guru {
+            background: #e7e4ff;
+        }
 
-.content {
-    padding: 30px;
-}
+        .card-kelas {
+            background: #d9f3f0;
+        }
 
-.page-title {
-    color: #17365d;
-    font-weight: bold;
-    margin-bottom: 25px;
-}
+        .card-pelanggaran {
+            background: #fce5f0;
+        }
 
-/* CARD */
+        /* FORM */
+        .form-box {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
+            margin-bottom: 25px;
+            border: 1px solid #e1ebf8;
+        }
 
-.dashboard-card {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 3px 12px rgba(0,0,0,.08);
-    margin-bottom: 20px;
-}
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            border-color: #cfdef0;
+        }
 
-.card-siswa {
-    background: #d9f5df;
-}
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #8bbcff;
+            box-shadow: 0 0 0 0.2rem rgba(139, 188, 255, 0.25);
+        }
 
-.card-guru {
-    background: #fff0bd;
-}
+        /* BUTTON */
+        .btn-soft {
+            background: #8bbcff;
+            color: #17365d;
+            border: none;
+            border-radius: 8px;
+        }
 
-.card-kelas {
-    background: #d9eaff;
-}
+        .btn-soft:hover {
+            background: #6da9f5;
+            color: #17365d;
+        }
 
-.card-pelanggaran {
-    background: #e5ddff;
-}
+        .btn-edit {
+            background: #d9e7ff;
+            color: #234b7b;
+            border: none;
+            border-radius: 7px;
+        }
 
-/* FORM */
+        .btn-edit:hover {
+            background: #bdd5ff;
+            color: #17365d;
+        }
 
-.form-box {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 3px 12px rgba(0,0,0,.08);
-    margin-bottom: 25px;
-}
+        .btn-delete {
+            background: #ffdfe5;
+            color: #8b3045;
+            border: none;
+            border-radius: 7px;
+        }
 
-.form-control,
-.form-select {
-    border-radius: 8px;
-}
+        .btn-delete:hover {
+            background: #ffc7d2;
+            color: #762338;
+        }
 
-/* BUTTON */
+        /* TABLE */
+        .table-box {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
+            border: 1px solid #e1ebf8;
+        }
 
-.btn-soft {
-    background: #8bbcff;
-    color: #17365d;
-    border: none;
-}
+        .table th {
+            background: #d9eaff;
+            color: #234b7b;
+            white-space: nowrap;
+        }
 
-.btn-soft:hover {
-    background: #6da9f5;
-    color: #17365d;
-}
+        .table td {
+            vertical-align: middle;
+        }
 
-.btn-edit {
-    background: #ffd66b;
-    color: #513d00;
-    border: none;
-}
+        .table tbody tr:hover td {
+            background: #f2f7ff;
+        }
 
-.btn-delete {
-    background: #ff9e9e;
-    color: #681b1b;
-    border: none;
-}
+        /* ABOUT */
+        .about-box {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
+            border: 1px solid #e1ebf8;
+        }
 
-/* TABLE */
+        .about-header {
+            background: #d9eaff;
+            color: #234b7b;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
 
-.table-box {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 3px 12px rgba(0,0,0,.08);
-}
+        /* PENCARIAN TABEL */
+        .search-table-box {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
 
-.table th {
-    background: #d9eaff;
-    color: #17365d;
-    white-space: nowrap;
-}
+        .search-table {
+            width: 100%;
+            max-width: 350px;
+            padding: 10px 14px;
+            border: 1px solid #cbdff5;
+            border-radius: 10px;
+            outline: none;
+            background: #ffffff;
+            color: #334155;
+            transition: 0.2s;
+        }
 
-.table td {
-    vertical-align: middle;
-}
+        .search-table:focus {
+            border-color: #8bbcff;
+            box-shadow: 0 0 0 3px rgba(139, 188, 255, 0.2);
+        }
 
-/* ABOUT */
+        .search-info {
+            font-size: 13px;
+            color: #7188a6;
+            margin-top: 5px;
+        }
 
-.about-box {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 3px 12px rgba(0,0,0,.08);
-}
+        /* MOBILE */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                position: relative;
+            }
 
-.about-header {
-    background: #d9eaff;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
+            .content {
+                padding: 15px;
+            }
 
-/* MOBILE */
+            .table-box {
+                overflow-x: auto;
+            }
+        }
 
-@media(max-width: 768px) {
+        @media (max-width: 576px) {
+            .search-table-box {
+                justify-content: stretch;
+            }
 
-    .sidebar {
-        min-height: auto;
-        position: relative;
-    }
-
-    .content {
-        padding: 15px;
-    }
-
-    .table-box {
-        overflow-x: auto;
-    }
-
-}
-
-<style>
-/* Kotak pencarian tabel */
-.search-table-box {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 15px;
-}
-
-.search-table {
-    width: 100%;
-    max-width: 350px;
-    padding: 10px 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    outline: none;
-    background: #fff;
-    color: #334155;
-    transition: 0.2s;
-}
-
-.search-table:focus {
-    border-color: #8bbcff;
-    box-shadow: 0 0 0 3px rgba(139, 188, 255, 0.2);
-}
-
-.search-info {
-    font-size: 13px;
-    color: #64748b;
-    margin-top: 5px;
-}
-
-@media (max-width: 576px) {
-    .search-table-box {
-        justify-content: stretch;
-    }
-
-    .search-table {
-        max-width: 100%;
-    }
-}
-</style>
-
+            .search-table {
+                max-width: 100%;
+            }
+        }
+    </style>
 </head>
 
 <body>
-
 <div class="container-fluid">
+    <div class="row">
 
-<div class="row">
+        <!-- SIDEBAR -->
+        <div class="col-md-3 col-lg-2 sidebar">
+            <div class="sidebar-title">
+                Sistem Informasi Pelanggaran Siswa
+            </div>
 
-<!-- ===========
-     SIDEBAR
-     ===========-->
-
-<div class="col-md-3 col-lg-2 sidebar">
-
-    <div class="sidebar-title">
-        Sistem Informasi Pelanggaran Siswa
-    </div>
-
-    <div class="menu-title">
-        MENU UTAMA
-    </div>
-
-    <a
-        href="dashboard.php?page=dashboard"
-        class="menu-link <?= $page === 'dashboard' ? 'active' : '' ?>"
-    >
-        Dashboard
-    </a>
-
-    <?php if ($role === 'admin'): ?>
-
-        <div class="menu-title">
-            MENU ADMIN
-        </div>
-
-        <?php foreach ($menu_admin as $link => $text): ?>
+            <div class="menu-title">MENU UTAMA</div>
 
             <a
-                href="dashboard.php?page=<?= $link ?>"
-                class="menu-link <?= $page === $link ? 'active' : '' ?>"
+                href="dashboard.php?page=dashboard"
+                class="menu-link <?= $page === 'dashboard' ? 'active' : '' ?>"
             >
-                <?= e($text) ?>
+                Dashboard
             </a>
 
-        <?php endforeach; ?>   
+            <?php if ($role === 'admin'): ?>
+                <div class="menu-title">MENU ADMIN</div>
 
-    <?php endif; ?>
+                <?php foreach ($menu_admin as $link => $text): ?>
+                    <a
+                        href="dashboard.php?page=<?= e($link) ?>"
+                        class="menu-link <?= $page === $link ? 'active' : '' ?>"
+                    >
+                        <?= e($text) ?>
+                    </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
 
+            <?php if ($role === 'guru'): ?>
+                <div class="menu-title">MENU GURU</div>
 
-    <?php if ($role === 'guru'): ?>
+                <?php foreach ($menu_guru as $link => $text): ?>
+                    <a
+                        href="dashboard.php?page=<?= e($link) ?>"
+                        class="menu-link <?= $page === $link ? 'active' : '' ?>"
+                    >
+                        <?= e($text) ?>
+                    </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
 
-        <div class="menu-title">
-            MENU GURU
-        </div>
-
-        <?php foreach ($menu_guru as $link => $text): ?>
+            <div class="menu-title">LAINNYA</div>
 
             <a
-                href="dashboard.php?page=<?= $link ?>"
-                class="menu-link <?= $page === $link ? 'active' : '' ?>"
+                href="dashboard.php?page=about"
+                class="menu-link <?= $page === 'about' ? 'active' : '' ?>"
             >
-                <?= e($text) ?>
+                About
             </a>
 
-        <?php endforeach; ?>
+            <a
+                href="logout.php"
+                class="menu-link"
+                onclick="return confirm('Yakin ingin keluar?')"
+            >
+                Logout
+            </a>
+        </div>
 
-    <?php endif; ?>
+        <!-- CONTENT -->
+        <div class="col-md-9 col-lg-10 content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="page-title mb-1">
+                        <?= e(ucwords(str_replace('_', ' ', $page))) ?>
+                    </h2>
+                </div>
+            </div>
 
+            <?php if ($error): ?>
+                <div class="alert alert-danger">
+                    <?= e($error) ?>
+                </div>
+            <?php endif; ?>
 
-    <div class="menu-title">
-        LAINNYA
+            <?php
+            $halaman_file = [
+                'dashboard' => 'beranda.php',
+                'kelola_siswa' => 'kelola_siswa.php',
+                'kelola_guru' => 'kelola_guru.php',
+                'kelola_kelas' => 'kelola_kelas.php',
+                'kelola_tahun_ajaran' => 'kelola_tahun_ajaran.php',
+                'kelola_kategori' => 'kelola_kategori.php',
+                'kelola_jenis_pelanggaran' => 'kelola_jenis_pelanggaran.php',
+                'penempatan_siswa' => 'penempatan_siswa.php',
+                'kelola_wali_kelas' => 'kelola_wali_kelas.php',
+                'catat_pelanggaran' => 'catat_pelanggaran.php',
+                'tindakan' => 'tindakan.php',
+                'laporan' => 'laporan.php',
+                'riwayat' => 'riwayat.php',
+                'rekap_poin' => 'rekap_poin.php',
+                'about' => 'about.php'
+            ];
+
+            if (isset($halaman_file[$page])) {
+                require __DIR__ . '/' . $halaman_file[$page];
+            }
+            ?>
+        </div>
     </div>
-
-    <a
-        href="dashboard.php?page=about"
-        class="menu-link <?= $page === 'about' ? 'active' : '' ?>"
-    >
-        About
-    </a>
-
-    <a
-        href="logout.php"
-        class="menu-link"
-        onclick="return confirm('Yakin ingin keluar?')"
-    >
-        Logout
-    </a>
-
-</div>
-
-
-<!-- =====================================================
-     CONTENT
-===================================================== -->
-
-<div class="col-md-9 col-lg-10 content">
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-
-    <div>
-        <h2 class="page-title mb-1">
-            <?= e(ucwords(str_replace('_', ' ', $page))) ?>
-        </h2>
-    </div>
-
-</div>
-
-
-<?php if ($error): ?>
-
-<div class="alert alert-danger">
-    <?= e($error) ?>
-</div>
-
-<?php endif; ?>
-
-
-<!-- =====================================================
-     DASHBOARD
-===================================================== -->
-
-<?php
-$halaman_file = [
-    'dashboard' => 'beranda.php',
-    'kelola_siswa' => 'kelola_siswa.php',
-    'kelola_guru' => 'kelola_guru.php',
-    'kelola_kelas' => 'kelola_kelas.php',
-    'kelola_tahun_ajaran' => 'kelola_tahun_ajaran.php',
-    'kelola_kategori' => 'kelola_kategori.php',
-    'kelola_jenis_pelanggaran' => 'kelola_jenis_pelanggaran.php',
-    'penempatan_siswa' => 'penempatan_siswa.php',
-    'kelola_wali_kelas' => 'kelola_wali_kelas.php',
-    'catat_pelanggaran' => 'catat_pelanggaran.php',
-    'tindakan' => 'tindakan.php',
-    'laporan' => 'laporan.php',
-    'riwayat' => 'riwayat.php',
-    'rekap_poin' => 'rekap_poin.php',
-    'about' => 'about.php'
-];
-
-if (isset($halaman_file[$page])) {
-    require __DIR__ . '/' . $halaman_file[$page];
-}
-?>
-
-
-</div>
-
-</div>
-
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-
-    // Cari tabel pada halaman yang sedang dibuka
     const tables = document.querySelectorAll(
         '.table-box table, .dashboard-card table, #area-laporan table'
     );
 
-    tables.forEach(function (table, index) {
-
-        // Jangan membuat pencarian ganda pada tabel yang sama
+    tables.forEach(function (table) {
         if (table.dataset.searchReady === '1') {
             return;
         }
 
         table.dataset.searchReady = '1';
 
-        // Buat area pencarian
         const searchBox = document.createElement('div');
         searchBox.className = 'search-table-box';
 
@@ -1488,7 +1296,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         searchBox.appendChild(input);
 
-        // Letakkan pencarian sebelum tabel
         const wrapper = table.closest('.table-responsive');
 
         if (wrapper) {
@@ -1497,7 +1304,6 @@ document.addEventListener('DOMContentLoaded', function () {
             table.parentNode.insertBefore(searchBox, table);
         }
 
-        // Buat informasi jumlah data
         const info = document.createElement('div');
         info.className = 'search-info';
         searchBox.insertAdjacentElement('afterend', info);
@@ -1507,14 +1313,10 @@ document.addEventListener('DOMContentLoaded', function () {
         );
 
         function filterRows() {
-            const keyword = input.value
-                .trim()
-                .toLowerCase();
-
+            const keyword = input.value.trim().toLowerCase();
             let jumlah = 0;
 
             rows.forEach(function (row) {
-                // Abaikan baris pesan kosong
                 const text = row.textContent.toLowerCase();
                 const cocok = text.includes(keyword);
 
@@ -1531,12 +1333,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         input.addEventListener('input', filterRows);
-
         filterRows();
     });
-
 });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
 </html>

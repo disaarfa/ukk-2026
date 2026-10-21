@@ -1,296 +1,356 @@
-<?php /* Halaman kelola_siswa; dipanggil melalui dashboard.php */ ?>
-
-
 <?php
+/* Halaman kelola_siswa; dipanggil melalui dashboard.php */
 
+// =========================
+// PENGATURAN PAGINATION
+// =========================
+$per_halaman = 10;
+$halaman = max(1, (int)($_GET['halaman'] ?? 1));
+
+// =========================
+// AMBIL DATA UNTUK EDIT
+// =========================
 $data_edit = null;
 
 if ($edit_id > 0) {
-
-    $qe = mysqli_query(
+    $stmt_edit = mysqli_prepare(
         $koneksi,
-        "SELECT * FROM t_siswa
-         WHERE id='$edit_id'
-         LIMIT 1"
+        "SELECT * FROM t_siswa WHERE id=? LIMIT 1"
     );
 
-    $data_edit = mysqli_fetch_assoc($qe);
-}
+    mysqli_stmt_bind_param($stmt_edit, "i", $edit_id);
+    mysqli_stmt_execute($stmt_edit);
 
+    $hasil_edit = mysqli_stmt_get_result($stmt_edit);
+    $data_edit = mysqli_fetch_assoc($hasil_edit);
+
+    mysqli_stmt_close($stmt_edit);
+}
 ?>
 
 <div class="form-box">
 
-<h4>
-    <?= $data_edit ? 'Edit Siswa' : 'Tambah Siswa' ?>
-</h4>
+    <h4><?= $data_edit ? 'Edit Siswa' : 'Tambah Siswa' ?></h4>
 
-<form method="POST">
+    <form method="POST">
 
-<input
-    type="hidden"
-    name="aksi"
-    value="<?= $data_edit ? 'edit' : 'tambah' ?>"
->
+        <input
+            type="hidden"
+            name="aksi"
+            value="<?= $data_edit ? 'edit' : 'tambah' ?>"
+        >
 
-<?php if ($data_edit): ?>
+        <?php if ($data_edit): ?>
+            <input
+                type="hidden"
+                name="id"
+                value="<?= (int)$data_edit['id'] ?>"
+            >
+        <?php endif; ?>
 
-<input
-    type="hidden"
-    name="id"
-    value="<?= $data_edit['id'] ?>"
->
+        <div class="row">
 
-<?php endif; ?>
+            <!-- NIS -->
+            <div class="col-md-6 mb-3">
+                <label>NIS</label>
+                <input
+                    type="text"
+                    name="nis"
+                    class="form-control"
+                    required
+                    maxlength="10"
+                    minlength="10"
+                    inputmode="numeric"
+                    pattern="[0-9]{10}"
+                    title="NIS harus terdiri dari tepat 10 angka."
+                    oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+                    value="<?= e($data_edit['nis'] ?? '') ?>"
+                    placeholder="Masukkan 10 angka NIS"
+                >
+            </div>
 
-<div class="row">
+            <!-- NISN -->
+            <div class="col-md-6 mb-3">
+                <label>NISN</label>
+                <input
+                    type="text"
+                    name="nisn"
+                    class="form-control"
+                    maxlength="10"
+                    minlength="10"
+                    inputmode="numeric"
+                    pattern="[0-9]{10}"
+                    title="Jika diisi, NISN harus terdiri dari tepat 10 angka."
+                    oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+                    value="<?= e($data_edit['nisn'] ?? '') ?>"
+                    placeholder="Masukkan 10 angka NISN"
+                >
+            </div>
 
-<div class="col-md-6 mb-3">
+            <!-- NAMA -->
+            <div class="col-md-6 mb-3">
+                <label>Nama Siswa</label>
+                <input
+                    type="text"
+                    name="nama"
+                    class="form-control"
+                    required
+                    value="<?= e($data_edit['nama'] ?? '') ?>"
+                >
+            </div>
 
-<label>NIS</label>
+            <!-- JENIS KELAMIN -->
+            <div class="col-md-6 mb-3">
+                <label>Jenis Kelamin</label>
+                <select name="jenis_kelamin" class="form-select">
+                    <option value="L"
+                        <?= (($data_edit['jenis_kelamin'] ?? '') === 'L') ? 'selected' : '' ?>>
+                        Laki-laki
+                    </option>
 
-<input
-    type="text"
-    name="nis"
-    class="form-control"
-    required
-    value="<?= e($data_edit['nis'] ?? '') ?>"
->
+                    <option value="P"
+                        <?= (($data_edit['jenis_kelamin'] ?? '') === 'P') ? 'selected' : '' ?>>
+                        Perempuan
+                    </option>
+                </select>
+            </div>
 
-</div>
+            <!-- TANGGAL LAHIR -->
+            <div class="col-md-6 mb-3">
+                <label>Tanggal Lahir</label>
+                <input
+                    type="date"
+                    name="tanggal_lahir"
+                    class="form-control"
+                    value="<?= e($data_edit['tanggal_lahir'] ?? '') ?>"
+                >
+            </div>
 
-<div class="col-md-6 mb-3">
+            <!-- STATUS -->
+            <div class="col-md-6 mb-3">
+                <label>Status</label>
+                <select name="status_aktif" class="form-select">
+                    <option value="1"
+                        <?= (($data_edit['status_aktif'] ?? 1) == 1) ? 'selected' : '' ?>>
+                        Aktif
+                    </option>
 
-<label>NISN</label>
+                    <option value="0"
+                        <?= (($data_edit['status_aktif'] ?? 1) == 0) ? 'selected' : '' ?>>
+                        Tidak Aktif
+                    </option>
+                </select>
+            </div>
 
-<input
-    type="text"
-    name="nisn"
-    class="form-control"
-    value="<?= e($data_edit['nisn'] ?? '') ?>"
->
+            <!-- ALAMAT -->
+            <div class="col-12 mb-3">
+                <label>Alamat</label>
+                <textarea
+                    name="alamat"
+                    class="form-control"
+                    rows="3"
+                ><?= e($data_edit['alamat'] ?? '') ?></textarea>
+            </div>
 
-</div>
+        </div>
 
-<div class="col-md-6 mb-3">
+        <button type="submit" class="btn btn-soft">
+            <?= $data_edit ? 'Update Siswa' : 'Tambah Siswa' ?>
+        </button>
 
-<label>Nama Siswa</label>
+        <?php if ($data_edit): ?>
+            <a
+                href="dashboard.php?page=kelola_siswa"
+                class="btn btn-secondary"
+            >
+                Batal
+            </a>
+        <?php endif; ?>
 
-<input
-    type="text"
-    name="nama"
-    class="form-control"
-    required
-    value="<?= e($data_edit['nama'] ?? '') ?>"
->
-
-</div>
-
-<div class="col-md-6 mb-3">
-
-<label>Jenis Kelamin</label>
-
-<select
-    name="jenis_kelamin"
-    class="form-select"
->
-
-<option value="L"
-<?= (($data_edit['jenis_kelamin'] ?? '') === 'L') ? 'selected' : '' ?>>
-Laki-laki
-</option>
-
-<option value="P"
-<?= (($data_edit['jenis_kelamin'] ?? '') === 'P') ? 'selected' : '' ?>>
-Perempuan
-</option>
-
-</select>
-
-</div>
-
-<div class="col-md-6 mb-3">
-
-<label>Tanggal Lahir</label>
-
-<input
-    type="date"
-    name="tanggal_lahir"
-    class="form-control"
-    value="<?= e($data_edit['tanggal_lahir'] ?? '') ?>"
->
-
-</div>
-
-<div class="col-md-6 mb-3">
-
-<label>Status</label>
-
-<select
-    name="status_aktif"
-    class="form-select"
->
-
-<option
-value="1"
-<?= (($data_edit['status_aktif'] ?? 1) == 1) ? 'selected' : '' ?>>
-Aktif
-</option>
-
-<option
-value="0"
-<?= (($data_edit['status_aktif'] ?? 1) == 0) ? 'selected' : '' ?>>
-Tidak Aktif
-</option>
-
-</select>
-
-</div>
-
-<div class="col-12 mb-3">
-
-<label>Alamat</label>
-
-<textarea
-    name="alamat"
-    class="form-control"
-    rows="3"
-><?= e($data_edit['alamat'] ?? '') ?></textarea>
-
-</div>
-
-</div>
-
-<button class="btn btn-soft">
-
-<?= $data_edit ? 'Update Siswa' : 'Tambah Siswa' ?>
-
-</button>
-
-<?php if ($data_edit): ?>
-
-<a
-    href="dashboard.php?page=kelola_siswa"
-    class="btn btn-secondary"
->
-    Batal
-</a>
-
-<?php endif; ?>
-
-</form>
+    </form>
 
 </div>
 
+
+<!-- =========================
+     TABEL DATA SISWA
+========================= -->
+
+<?php
+// Hitung jumlah siswa
+$hasil_total = mysqli_query(
+    $koneksi,
+    "SELECT COUNT(*) AS total FROM t_siswa"
+);
+
+$total_data = (int)mysqli_fetch_assoc($hasil_total)['total'];
+
+$total_halaman = max(
+    1,
+    (int)ceil($total_data / $per_halaman)
+);
+
+$halaman = min($halaman, $total_halaman);
+$offset = ($halaman - 1) * $per_halaman;
+
+// Ambil data siswa sesuai halaman
+$stmt_siswa = mysqli_prepare(
+    $koneksi,
+    "SELECT * FROM t_siswa
+     ORDER BY id DESC
+     LIMIT ? OFFSET ?"
+);
+
+mysqli_stmt_bind_param(
+    $stmt_siswa,
+    "ii",
+    $per_halaman,
+    $offset
+);
+
+mysqli_stmt_execute($stmt_siswa);
+$q = mysqli_stmt_get_result($stmt_siswa);
+?>
 
 <div class="table-box">
 
-<h4 class="mb-3">
-    Data Siswa
-</h4>
+    <h4 class="mb-3">Data Siswa</h4>
 
-<div class="table-responsive">
+    <p>Jumlah siswa: <?= $total_data ?> data</p>
 
-<table class="table table-bordered table-hover">
+    <div class="table-responsive">
 
-<thead>
+        <table class="table table-bordered table-hover">
 
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>NIS</th>
+                    <th>NISN</th>
+                    <th>Nama</th>
+                    <th>JK</th>
+                    <th>Tanggal Lahir</th>
+                    <th>Alamat</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
 
-<thead>
-<tr>
-    <th>No</th>
-    <th>NIS</th>
-    <th>NISN</th>
-    <th>Nama</th>
-    <th>JK</th>
-    <th>Tanggal Lahir</th>
-    <th>Alamat</th>
-    <th>Status</th>
-    <th>Aksi</th>
-</tr>
-</thead>
+            <tbody>
 
+                <?php if (mysqli_num_rows($q) > 0): ?>
 
-</thead>
+                    <?php $no = $offset + 1; ?>
 
-<tbody>
+                    <?php while ($r = mysqli_fetch_assoc($q)): ?>
 
-<?php
+                        <tr>
+                            <td><?= $no++ ?></td>
+                            <td><?= e($r['nis']) ?></td>
+                            <td><?= e($r['nisn'] ?? '') ?></td>
+                            <td><?= e($r['nama']) ?></td>
+                            <td><?= e($r['jenis_kelamin']) ?></td>
+                            <td><?= e($r['tanggal_lahir'] ?? '') ?></td>
+                            <td><?= e($r['alamat'] ?? '') ?></td>
 
-$no = 1;
+                            <td>
+                                <?php if ($r['status_aktif']): ?>
+                                    <span class="badge bg-success">
+                                        Aktif
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">
+                                        Tidak Aktif
+                                    </span>
+                                <?php endif; ?>
+                            </td>
 
-$q = mysqli_query(
-    $koneksi,
-    "SELECT * FROM t_siswa
-     ORDER BY id DESC"
-);
+                            <td>
+                                <a
+                                    href="dashboard.php?page=kelola_siswa&edit=<?= (int)$r['id'] ?>"
+                                    class="btn btn-edit btn-sm"
+                                >
+                                    Edit
+                                </a>
 
-while ($r = mysqli_fetch_assoc($q)):
+                                <a
+                                    href="dashboard.php?page=kelola_siswa&hapus=siswa&id=<?= (int)$r['id'] ?>"
+                                    class="btn btn-delete btn-sm"
+                                    onclick="return confirm('Yakin ingin menonaktifkan siswa ini? Data dan riwayat pelanggaran tetap disimpan.')"
+                                >
+                                    Hapus
+                                </a>
+                            </td>
+                        </tr>
 
-?>
+                    <?php endwhile; ?>
 
-<tr>
+                <?php else: ?>
 
-<td><?= $no++ ?></td>
+                    <tr>
+                        <td colspan="9" class="text-center">
+                            Belum ada data siswa.
+                        </td>
+                    </tr>
 
-<td><?= e($r['nis']) ?></td>
+                <?php endif; ?>
 
-<td><?= e($r['nisn']) ?></td>
+            </tbody>
 
-<td><?= e($r['nama']) ?></td>
+        </table>
 
-<td><?= e($r['jenis_kelamin']) ?></td>
+    </div>
 
-<td><?= e($r['tanggal_lahir']) ?></td>
+    <!-- PAGINATION DI SISI KANAN -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-<td><?= e($r['alamat'] ?? '') ?></td>
+        <small class="text-muted">
+            Menampilkan <?= $total_data > 0 ? $offset + 1 : 0 ?>
+            - <?= min($offset + $per_halaman, $total_data) ?>
+            dari <?= $total_data ?> siswa
+        </small>
 
-<td>
+        <nav aria-label="Pagination siswa">
 
-<?php if ($r['status_aktif']): ?>
+            <ul class="pagination justify-content-end flex-wrap mb-0">
 
-<span class="badge bg-success">
-Aktif
-</span>
+                <li class="page-item <?= $halaman <= 1 ? 'disabled' : '' ?>">
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=kelola_siswa&halaman=<?= max(1, $halaman - 1) ?>"
+                    >
+                        Sebelumnya
+                    </a>
+                </li>
 
-<?php else: ?>
+                <?php for ($i = 1; $i <= $total_halaman; $i++): ?>
 
-<span class="badge bg-secondary">
-Tidak Aktif
-</span>
+                    <li class="page-item <?= $i === $halaman ? 'active' : '' ?>">
+                        <a
+                            class="page-link"
+                            href="dashboard.php?page=kelola_siswa&halaman=<?= $i ?>"
+                        >
+                            <?= $i ?>
+                        </a>
+                    </li>
 
-<?php endif; ?>
+                <?php endfor; ?>
 
-</td>
+                <li class="page-item <?= $halaman >= $total_halaman ? 'disabled' : '' ?>">
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=kelola_siswa&halaman=<?= min($total_halaman, $halaman + 1) ?>"
+                    >
+                        Selanjutnya
+                    </a>
+                </li>
 
-<td>
+            </ul>
 
-<a
-    href="dashboard.php?page=kelola_siswa&edit=<?= $r['id'] ?>"
-    class="btn btn-edit btn-sm"
->
-    Edit
-</a>
+        </nav>
 
-
-<a
-    href="dashboard.php?page=kelola_siswa&hapus=siswa&id=<?= (int)$r['id'] ?>"
-    class="btn btn-delete btn-sm"
-    onclick="return confirm('Yakin ingin menonaktifkan siswa ini? Data dan riwayat pelanggaran tetap disimpan.')"
->
-    Hapus
-</a>
-
-</td>
-
-</tr>
-
-<?php endwhile; ?>
-
-</tbody>
-
-</table>
+    </div>
 
 </div>
 
-</div>
+<?php mysqli_stmt_close($stmt_siswa); ?>
