@@ -190,9 +190,7 @@
     <!-- PROFIL -->
     <div class="about-profile">
 
-        <div class="about-avatar">
-            AD
-        </div>
+       <img src="foto.afa.png" alt="Foto Profil" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
 
         <div>
             <h4>Arfa Disa Okamameliza</h4>
@@ -204,7 +202,7 @@
                 </span>
             </p>
 
-            <p>💻 Rekayasa Perangkat Lunak</p>
+            <p>Rekayasa Perangkat Lunak</p>
         </div>
 
     </div>
@@ -220,7 +218,7 @@
     </p>
 
     <!-- INFORMASI PRIBADI -->
-    <h5 class="about-section-title">📋 Informasi Pribadi</h5>
+    <h5 class="about-section-title">Informasi Pribadi</h5>
 
     <div class="about-info-grid">
 
