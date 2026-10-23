@@ -213,8 +213,14 @@
     <h5 class="about-section-title">Tentang Saya</h5>
 
     <p class="about-intro">
-        Halo, Aku arfa boleh di panggil afaa biar ga ribet,
-        asal jangan di panggil sayang nanti takut baper 
+        Halo, Aku arfa boleh di panggil afaa biar ga ribet
+    </p>
+
+      <p>
+       Setiap baris kode adalah proses belajar, setiap fitur adalah hasil dari usaha, dan setiap kesalahan adalah kesempatan untuk berkembang.
+       Sistem Informasi Pelanggaran Siswa ini merupakan salah satu karya yang saya kembangkan sebagai bentuk penerapan ilmu Rekayasa Perangkat Lunak. 
+       Bukan hanya tentang membuat sebuah website, tetapi juga tentang menciptakan solusi digital yang bermanfaat, terstruktur, dan memudahkan pekerjaan di lingkungan sekolah.
+       Belajar, Berkarya, dan Terus Berkembang.
     </p>
 
     <!-- INFORMASI PRIBADI -->
