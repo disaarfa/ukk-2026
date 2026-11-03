@@ -1,4 +1,3 @@
-
 <?php /* Halaman about; dipanggil melalui dashboard.php */ ?>
 
 <style>
@@ -213,13 +212,14 @@
     <h5 class="about-section-title">Tentang Saya</h5>
 
     <p class="about-intro">
-        Halo, Aku arfa boleh di panggil afaa biar ga ribet
+        Halo, aku arfa boleh di panggil afaa biar ga kaya cowo
     </p>
 
       <p>
        Setiap baris kode adalah proses belajar, setiap fitur adalah hasil dari usaha, dan setiap kesalahan adalah kesempatan untuk berkembang.
        Sistem Informasi Pelanggaran Siswa ini merupakan salah satu karya yang saya kembangkan sebagai bentuk penerapan ilmu Rekayasa Perangkat Lunak. 
-       Bukan hanya tentang membuat sebuah website, tetapi juga tentang menciptakan solusi digital yang bermanfaat, terstruktur, dan memudahkan pekerjaan di lingkungan sekolah.
+       Bukan hanya tentang membuat sebuah website, tetapi juga tentang menciptakan solusi digital yang bermanfaat, terstruktur, 
+       dan memudahkan pekerjaan di lingkungan sekolah.
        Belajar, Berkarya, dan Terus Berkembang.
     </p>
 
@@ -274,7 +274,7 @@
     <div class="about-hobby-grid">
 
         <div class="about-hobby-card">
-            <h6>Tidur / Ketiduran</h6>
+            <h6>Tidur Kadang Ketiduran</h6>
         </div>
 
         <div class="about-hobby-card">
@@ -282,7 +282,7 @@
         </div>
 
         <div class="about-hobby-card">
-            <h6>Scrolling Sosmed</h6>
+            <h6>Scrolling Sosmed / Membaca Novel</h6>
         </div>
 
     </div>

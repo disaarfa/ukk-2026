@@ -46,6 +46,7 @@ if (
     ) {
         $pesan = 'Password dan konfirmasi password tidak sama.';
     } else {
+
         try {
             mysqli_begin_transaction($koneksi);
 
@@ -54,7 +55,7 @@ if (
             // ==================================
             if ($aksi === 'tambah') {
 
-                // CEK EMAIL AGAR TIDAK DUPLIKAT
+                // CEK EMAIL DUPLIKAT
                 $stmt_cek = mysqli_prepare(
                     $koneksi,
                     "SELECT id FROM t_users
@@ -73,7 +74,6 @@ if (
 
                 if (mysqli_stmt_num_rows($stmt_cek) > 0) {
                     mysqli_stmt_close($stmt_cek);
-
                     throw new Exception(
                         'Email sudah digunakan oleh akun lain.'
                     );
@@ -87,7 +87,7 @@ if (
                     PASSWORD_DEFAULT
                 );
 
-                // 1. SIMPAN AKUN KE TABEL T_USERS
+                // 1. INSERT AKUN KE T_USERS
                 $stmt_user = mysqli_prepare(
                     $koneksi,
                     "INSERT INTO t_users
@@ -103,23 +103,48 @@ if (
                     $hash
                 );
 
-                if (!mysqli_stmt_execute($stmt_user)) {
-                    $error = mysqli_stmt_error($stmt_user);
-                    mysqli_stmt_close($stmt_user);
-
-                    throw new Exception(
-                        'Gagal menyimpan akun ke t_users: ' . $error
-                    );
-                }
+                mysqli_stmt_execute($stmt_user);
 
                 // AMBIL ID USER YANG BARU DIBUAT
-                $user_id = mysqli_insert_id($koneksi);
+                $user_id = (int)mysqli_insert_id($koneksi);
 
                 mysqli_stmt_close($stmt_user);
 
-                // 2. SIMPAN DATA KE TABEL T_GURU
-                // Tabel t_guru tidak memiliki kolom password.
-                // Akun dihubungkan menggunakan user_id.
+                // 2. VALIDASI ID USER
+                if ($user_id <= 0) {
+                    throw new Exception(
+                        'ID akun tidak berhasil dibuat. Periksa AUTO_INCREMENT pada t_users.'
+                    );
+                }
+
+                $stmt_validasi = mysqli_prepare(
+                    $koneksi,
+                    "SELECT id FROM t_users
+                     WHERE id = ? AND role = 'guru'
+                     LIMIT 1"
+                );
+
+                mysqli_stmt_bind_param(
+                    $stmt_validasi,
+                    "i",
+                    $user_id
+                );
+
+                mysqli_stmt_execute($stmt_validasi);
+                $hasil_validasi = mysqli_stmt_get_result(
+                    $stmt_validasi
+                );
+
+                $akun_valid = mysqli_fetch_assoc($hasil_validasi);
+                mysqli_stmt_close($stmt_validasi);
+
+                if (!$akun_valid) {
+                    throw new Exception(
+                        'ID user tidak ditemukan di tabel t_users.'
+                    );
+                }
+
+                // 3. INSERT DATA KE T_GURU
                 $stmt_guru = mysqli_prepare(
                     $koneksi,
                     "INSERT INTO t_guru
@@ -137,19 +162,10 @@ if (
                     $user_id
                 );
 
-                if (!mysqli_stmt_execute($stmt_guru)) {
-                    $error = mysqli_stmt_error($stmt_guru);
-                    mysqli_stmt_close($stmt_guru);
-
-                    throw new Exception(
-                        'Gagal menyimpan data ke t_guru: ' . $error
-                    );
-                }
-
+                mysqli_stmt_execute($stmt_guru);
                 mysqli_stmt_close($stmt_guru);
 
-                $pesan =
-                    'Guru berhasil ditambahkan ke t_users dan t_guru!';
+                $pesan = 'Guru berhasil ditambahkan!';
 
             } else {
 
@@ -193,13 +209,41 @@ if (
                 $user_id = (int)($data_lama['user_id'] ?? 0);
                 $email_lama = $data_lama['email'] ?? '';
 
-                // Jika user_id kosong, coba cari akun berdasarkan
-                // email lama dan role guru.
+                // VALIDASI USER_ID LAMA
+                if ($user_id > 0) {
+                    $stmt_periksa = mysqli_prepare(
+                        $koneksi,
+                        "SELECT id FROM t_users
+                         WHERE id = ? AND role = 'guru'
+                         LIMIT 1"
+                    );
+
+                    mysqli_stmt_bind_param(
+                        $stmt_periksa,
+                        "i",
+                        $user_id
+                    );
+
+                    mysqli_stmt_execute($stmt_periksa);
+
+                    $hasil_periksa = mysqli_stmt_get_result(
+                        $stmt_periksa
+                    );
+
+                    $akun_ada = mysqli_fetch_assoc($hasil_periksa);
+                    mysqli_stmt_close($stmt_periksa);
+
+                    if (!$akun_ada) {
+                        $user_id = 0;
+                    }
+                }
+
+                // JIKA USER_ID KOSONG, CARI BERDASARKAN EMAIL LAMA
                 if ($user_id <= 0 && $email_lama !== '') {
+
                     $stmt_cari = mysqli_prepare(
                         $koneksi,
-                        "SELECT id
-                         FROM t_users
+                        "SELECT id FROM t_users
                          WHERE email = ? AND role = 'guru'
                          LIMIT 1"
                     );
@@ -212,9 +256,11 @@ if (
 
                     mysqli_stmt_execute($stmt_cari);
 
-                    $hasil_cari = mysqli_stmt_get_result($stmt_cari);
-                    $akun_lama = mysqli_fetch_assoc($hasil_cari);
+                    $hasil_cari = mysqli_stmt_get_result(
+                        $stmt_cari
+                    );
 
+                    $akun_lama = mysqli_fetch_assoc($hasil_cari);
                     mysqli_stmt_close($stmt_cari);
 
                     if ($akun_lama) {
@@ -222,7 +268,7 @@ if (
                     }
                 }
 
-                // CEK EMAIL BARU AGAR TIDAK DUPLIKAT
+                // CEK EMAIL BARU DUPLIKAT
                 $stmt_cek = mysqli_prepare(
                     $koneksi,
                     "SELECT id FROM t_users
@@ -253,8 +299,7 @@ if (
                 // JIKA BELUM ADA AKUN, PASSWORD WAJIB DIISI
                 if ($user_id <= 0 && $password === '') {
                     throw new Exception(
-                        'Guru ini belum memiliki akun login. ' .
-                        'Isi password untuk membuat akun guru.'
+                        'Guru belum memiliki akun login. Isi password untuk membuat akun.'
                     );
                 }
 
@@ -264,6 +309,7 @@ if (
                 if ($user_id > 0) {
 
                     if ($password !== '') {
+
                         $hash = password_hash(
                             $password,
                             PASSWORD_DEFAULT
@@ -272,7 +318,9 @@ if (
                         $stmt_user = mysqli_prepare(
                             $koneksi,
                             "UPDATE t_users
-                             SET name = ?, email = ?, password = ?
+                             SET name = ?,
+                                 email = ?,
+                                 password = ?
                              WHERE id = ? AND role = 'guru'"
                         );
 
@@ -286,10 +334,12 @@ if (
                         );
 
                     } else {
+
                         $stmt_user = mysqli_prepare(
                             $koneksi,
                             "UPDATE t_users
-                             SET name = ?, email = ?
+                             SET name = ?,
+                                 email = ?
                              WHERE id = ? AND role = 'guru'"
                         );
 
@@ -302,59 +352,12 @@ if (
                         );
                     }
 
-                    if (!mysqli_stmt_execute($stmt_user)) {
-                        $error = mysqli_stmt_error($stmt_user);
-                        mysqli_stmt_close($stmt_user);
-
-                        throw new Exception(
-                            'Gagal memperbarui t_users: ' . $error
-                        );
-                    }
-
-                    // Pastikan akun benar-benar ditemukan
-                    // dengan role guru.
-                    if (mysqli_stmt_affected_rows($stmt_user) === 0) {
-                        // Query UPDATE bisa menghasilkan 0 perubahan
-                        // jika nilainya tidak berubah. Periksa keberadaan.
-                        mysqli_stmt_close($stmt_user);
-
-                        $stmt_periksa = mysqli_prepare(
-                            $koneksi,
-                            "SELECT id FROM t_users
-                             WHERE id = ? AND role = 'guru'
-                             LIMIT 1"
-                        );
-
-                        mysqli_stmt_bind_param(
-                            $stmt_periksa,
-                            "i",
-                            $user_id
-                        );
-
-                        mysqli_stmt_execute($stmt_periksa);
-
-                        $hasil_periksa = mysqli_stmt_get_result(
-                            $stmt_periksa
-                        );
-
-                        $akun_ada = mysqli_fetch_assoc(
-                            $hasil_periksa
-                        );
-
-                        mysqli_stmt_close($stmt_periksa);
-
-                        if (!$akun_ada) {
-                            throw new Exception(
-                                'Akun guru tidak ditemukan di t_users.'
-                            );
-                        }
-                    } else {
-                        mysqli_stmt_close($stmt_user);
-                    }
+                    mysqli_stmt_execute($stmt_user);
+                    mysqli_stmt_close($stmt_user);
 
                 } else {
 
-                    // BUAT AKUN BARU UNTUK GURU LAMA
+                    // BUAT AKUN BARU
                     $hash = password_hash(
                         $password,
                         PASSWORD_DEFAULT
@@ -375,18 +378,48 @@ if (
                         $hash
                     );
 
-                    if (!mysqli_stmt_execute($stmt_user)) {
-                        $error = mysqli_stmt_error($stmt_user);
-                        mysqli_stmt_close($stmt_user);
+                    mysqli_stmt_execute($stmt_user);
 
-                        throw new Exception(
-                            'Gagal membuat akun guru: ' . $error
-                        );
-                    }
-
-                    $user_id = mysqli_insert_id($koneksi);
+                    $user_id = (int)mysqli_insert_id($koneksi);
 
                     mysqli_stmt_close($stmt_user);
+
+                    if ($user_id <= 0) {
+                        throw new Exception(
+                            'Gagal mendapatkan ID akun guru.'
+                        );
+                    }
+                }
+
+                // ==================================
+                // PASTIKAN USER_ID BENAR-BENAR ADA
+                // ==================================
+                $stmt_validasi = mysqli_prepare(
+                    $koneksi,
+                    "SELECT id FROM t_users
+                     WHERE id = ? AND role = 'guru'
+                     LIMIT 1"
+                );
+
+                mysqli_stmt_bind_param(
+                    $stmt_validasi,
+                    "i",
+                    $user_id
+                );
+
+                mysqli_stmt_execute($stmt_validasi);
+
+                $hasil_validasi = mysqli_stmt_get_result(
+                    $stmt_validasi
+                );
+
+                $akun_valid = mysqli_fetch_assoc($hasil_validasi);
+                mysqli_stmt_close($stmt_validasi);
+
+                if (!$akun_valid) {
+                    throw new Exception(
+                        'Akun guru tidak ditemukan di t_users.'
+                    );
                 }
 
                 // ==================================
@@ -414,29 +447,21 @@ if (
                     $id
                 );
 
-                if (!mysqli_stmt_execute($stmt_guru)) {
-                    $error = mysqli_stmt_error($stmt_guru);
-                    mysqli_stmt_close($stmt_guru);
-
-                    throw new Exception(
-                        'Gagal memperbarui t_guru: ' . $error
-                    );
-                }
-
+                mysqli_stmt_execute($stmt_guru);
                 mysqli_stmt_close($stmt_guru);
 
-                $pesan =
-                    'Data guru dan akun login berhasil diperbarui!';
+                $pesan = 'Data guru dan akun login berhasil diperbarui!';
             }
 
-            // SIMPAN SEMUA PERUBAHAN
+            // SIMPAN TRANSAKSI
             mysqli_commit($koneksi);
             $berhasil = true;
 
         } catch (Throwable $e) {
+
             mysqli_rollback($koneksi);
 
-            $pesan = $e->getMessage();
+            $pesan = 'Gagal: ' . $e->getMessage();
         }
     }
 
@@ -457,6 +482,7 @@ if (
 // AMBIL DATA UNTUK DIEDIT
 // =========================
 if ($edit_id > 0) {
+
     $stmt_edit = mysqli_prepare(
         $koneksi,
         "SELECT id, nip, nama, email, status_aktif
@@ -588,6 +614,7 @@ $q = mysqli_stmt_get_result($stmt_data);
                 <label>
                     Password <?= $data_edit ? '(opsional)' : '' ?>
                 </label>
+
                 <input
                     type="password"
                     name="password"
@@ -600,6 +627,7 @@ $q = mysqli_stmt_get_result($stmt_data);
 
             <div class="col-md-6 mb-3">
                 <label>Status</label>
+
                 <select name="status_aktif" class="form-select">
 
                     <option value="1"
@@ -617,6 +645,7 @@ $q = mysqli_stmt_get_result($stmt_data);
 
             <div class="col-md-6 mb-3">
                 <label>Konfirmasi Password</label>
+
                 <input
                     type="password"
                     name="konfirmasi_password"
@@ -721,7 +750,7 @@ $q = mysqli_stmt_get_result($stmt_data);
 
     </div>
 
-    <!-- PAGINATION DI KANAN -->
+    <!-- PAGINATION -->
 
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
