@@ -294,7 +294,7 @@
             dan tetap jadi diri sendiri.” 
         </p>
 
-        <small>— Arfa</small>
+        <small>— Afaaa</small>
     </div>
 
 </div>

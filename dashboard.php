@@ -211,11 +211,12 @@ if (
     }
 }
 
+
 /* ============
    CRUD SISWA
    ============ */
 
-if (
+   if (
     $role === 'admin' &&
     $page === 'kelola_siswa' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
@@ -232,9 +233,18 @@ if (
         trim($_POST['nisn'] ?? '')
     );
 
+    // Ubah nama menjadi huruf kapital di awal setiap kata
+    $nama_input = trim($_POST['nama'] ?? '');
+
+    $nama_input = mb_convert_case(
+        mb_strtolower($nama_input, 'UTF-8'),
+        MB_CASE_TITLE,
+        'UTF-8'
+    );
+
     $nama_siswa = mysqli_real_escape_string(
         $koneksi,
-        trim($_POST['nama'] ?? '')
+        $nama_input
     );
 
     $jk = mysqli_real_escape_string(
@@ -254,35 +264,54 @@ if (
 
     $status = (int)($_POST['status_aktif'] ?? 1);
 
+    // TAMBAH SISWA
     if ($aksi === 'tambah') {
+
         mysqli_query($koneksi, "
             INSERT INTO t_siswa
             (
-                nis, nisn, nama, jenis_kelamin,
-                tanggal_lahir, alamat, status_aktif,
-                created_at, updated_at
+                nis,
+                nisn,
+                nama,
+                jenis_kelamin,
+                tanggal_lahir,
+                alamat,
+                status_aktif,
+                created_at,
+                updated_at
             )
             VALUES
             (
-                '$nis', '$nisn', '$nama_siswa', '$jk',
-                '$tanggal', '$alamat', '$status',
-                NOW(), NOW()
+                '$nis',
+                '$nisn',
+                '$nama_siswa',
+                '$jk',
+                '$tanggal',
+                '$alamat',
+                '$status',
+                NOW(),
+                NOW()
             )
         ");
-    } elseif ($aksi === 'edit') {
-        $id = (int)$_POST['id'];
+
+    }
+
+    // EDIT SISWA
+    elseif ($aksi === 'edit') {
+
+        $id = (int)($_POST['id'] ?? 0);
 
         mysqli_query($koneksi, "
             UPDATE t_siswa SET
-                nis='$nis',
-                nisn='$nisn',
-                nama='$nama_siswa',
-                jenis_kelamin='$jk',
-                tanggal_lahir='$tanggal',
-                alamat='$alamat',
-                status_aktif='$status',
-                updated_at=NOW()
-            WHERE id='$id'
+                nis = '$nis',
+                nisn = '$nisn',
+                nama = '$nama_siswa',
+                jenis_kelamin = '$jk',
+                tanggal_lahir = '$tanggal',
+                alamat = '$alamat',
+                status_aktif = '$status',
+                updated_at = NOW()
+            WHERE id = '$id'
         ");
     }
 
@@ -290,64 +319,326 @@ if (
     exit;
 }
 
+
 /* ===============
    CRUD GURU
    =============== */
 
-if (
+   if (
     $role === 'admin' &&
     $page === 'kelola_guru' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
+
     $aksi = $_POST['aksi'] ?? '';
 
-    $nip = mysqli_real_escape_string(
-        $koneksi,
-        trim($_POST['nip'] ?? '')
-    );
-
-    $nama_guru = mysqli_real_escape_string(
-        $koneksi,
-        trim($_POST['nama'] ?? '')
-    );
-
-    $email_guru = mysqli_real_escape_string(
-        $koneksi,
-        trim($_POST['email'] ?? '')
-    );
-
+    $nip = trim($_POST['nip'] ?? '');
+    $nama_guru = trim($_POST['nama'] ?? '');
+    $email_guru = strtolower(trim($_POST['email'] ?? ''));
     $status = (int)($_POST['status_aktif'] ?? 1);
 
-    if ($aksi === 'tambah') {
-        mysqli_query($koneksi, "
-            INSERT INTO t_guru
-            (
-                nip, nama, email, status_aktif,
-                created_at, updated_at
-            )
-            VALUES
-            (
-                '$nip', '$nama_guru', '$email_guru',
-                '$status', NOW(), NOW()
-            )
-        ");
-    } elseif ($aksi === 'edit') {
-        $id = (int)$_POST['id'];
+    $password = $_POST['password'] ?? '';
+    $konfirmasi = $_POST['konfirmasi_password'] ?? '';
 
-        mysqli_query($koneksi, "
-            UPDATE t_guru SET
-                nip='$nip',
-                nama='$nama_guru',
-                email='$email_guru',
-                status_aktif='$status',
-                updated_at=NOW()
-            WHERE id='$id'
-        ");
+    try {
+
+        if (
+            $nip === '' ||
+            $nama_guru === '' ||
+            $email_guru === ''
+        ) {
+            throw new Exception("Semua data guru wajib diisi.");
+        }
+
+        if (!filter_var($email_guru, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("Format email tidak valid.");
+        }
+
+        mysqli_begin_transaction($koneksi);
+
+        /* =====================
+           TAMBAH GURU
+           ===================== */
+
+        if ($aksi === 'tambah') {
+
+            if ($password === '') {
+                throw new Exception("Password wajib diisi.");
+            }
+
+            if ($password !== $konfirmasi) {
+                throw new Exception("Konfirmasi password tidak cocok.");
+            }
+
+            // Cek email di tabel users
+            $cek = mysqli_prepare(
+                $koneksi,
+                "SELECT id FROM t_users WHERE email = ? LIMIT 1"
+            );
+
+            mysqli_stmt_bind_param($cek, "s", $email_guru);
+            mysqli_stmt_execute($cek);
+
+            $hasil_cek = mysqli_stmt_get_result($cek);
+
+            if (mysqli_num_rows($hasil_cek) > 0) {
+                throw new Exception("Email sudah digunakan.");
+            }
+
+            mysqli_stmt_close($cek);
+
+            // Enkripsi password
+            $password_hash = password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            );
+
+            // 1. Masukkan akun ke t_users
+            $stmt_user = mysqli_prepare(
+                $koneksi,
+                "INSERT INTO t_users
+                (name, email, password, role, created_at, updated_at)
+                VALUES (?, ?, ?, 'guru', NOW(), NOW())"
+            );
+
+            mysqli_stmt_bind_param(
+                $stmt_user,
+                "sss",
+                $nama_guru,
+                $email_guru,
+                $password_hash
+            );
+
+            mysqli_stmt_execute($stmt_user);
+
+            // Ambil ID user yang baru dibuat
+            $user_id_baru = mysqli_insert_id($koneksi);
+
+            mysqli_stmt_close($stmt_user);
+
+            if ($user_id_baru <= 0) {
+                throw new Exception("Gagal membuat akun guru.");
+            }
+
+            // 2. Masukkan data guru dengan user_id yang benar
+            $stmt_guru = mysqli_prepare(
+                $koneksi,
+                "INSERT INTO t_guru
+                (nip, nama, email, status_aktif, user_id,
+                 created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, NOW(), NOW())"
+            );
+
+            mysqli_stmt_bind_param(
+                $stmt_guru,
+                "sssii",
+                $nip,
+                $nama_guru,
+                $email_guru,
+                $status,
+                $user_id_baru
+            );
+
+            mysqli_stmt_execute($stmt_guru);
+            mysqli_stmt_close($stmt_guru);
+
+        }
+
+        /* =====================
+           EDIT GURU
+           ===================== */
+
+        elseif ($aksi === 'edit') {
+
+            $id = (int)($_POST['id'] ?? 0);
+
+            if ($id <= 0) {
+                throw new Exception("ID guru tidak valid.");
+            }
+
+            // Ambil data guru
+            $stmt = mysqli_prepare(
+                $koneksi,
+                "SELECT user_id FROM t_guru WHERE id = ? LIMIT 1"
+            );
+
+            mysqli_stmt_bind_param($stmt, "i", $id);
+            mysqli_stmt_execute($stmt);
+
+            $hasil = mysqli_stmt_get_result($stmt);
+            $data_guru = mysqli_fetch_assoc($hasil);
+
+            mysqli_stmt_close($stmt);
+
+            if (!$data_guru) {
+                throw new Exception("Data guru tidak ditemukan.");
+            }
+
+            $user_id_lama = (int)$data_guru['user_id'];
+
+            // Cek email agar tidak digunakan akun lain
+            $cek = mysqli_prepare(
+                $koneksi,
+                "SELECT id FROM t_users
+                 WHERE email = ? AND id <> ?
+                 LIMIT 1"
+            );
+
+            mysqli_stmt_bind_param(
+                $cek,
+                "si",
+                $email_guru,
+                $user_id_lama
+            );
+
+            mysqli_stmt_execute($cek);
+
+            $hasil_cek = mysqli_stmt_get_result($cek);
+
+            if (mysqli_num_rows($hasil_cek) > 0) {
+                throw new Exception("Email sudah digunakan akun lain.");
+            }
+
+            mysqli_stmt_close($cek);
+
+            if ($password !== '' && $password !== $konfirmasi) {
+                throw new Exception("Konfirmasi password tidak cocok.");
+            }
+
+            if ($user_id_lama > 0) {
+
+                // Update akun yang sudah terhubung
+                if ($password !== '') {
+
+                    $password_hash = password_hash(
+                        $password,
+                        PASSWORD_DEFAULT
+                    );
+
+                    $stmt_user = mysqli_prepare(
+                        $koneksi,
+                        "UPDATE t_users SET
+                         name = ?,
+                         email = ?,
+                         password = ?,
+                         role = 'guru',
+                         updated_at = NOW()
+                         WHERE id = ?"
+                    );
+
+                    mysqli_stmt_bind_param(
+                        $stmt_user,
+                        "sssi",
+                        $nama_guru,
+                        $email_guru,
+                        $password_hash,
+                        $user_id_lama
+                    );
+
+                } else {
+
+                    $stmt_user = mysqli_prepare(
+                        $koneksi,
+                        "UPDATE t_users SET
+                         name = ?,
+                         email = ?,
+                         role = 'guru',
+                         updated_at = NOW()
+                         WHERE id = ?"
+                    );
+
+                    mysqli_stmt_bind_param(
+                        $stmt_user,
+                        "ssi",
+                        $nama_guru,
+                        $email_guru,
+                        $user_id_lama
+                    );
+                }
+
+                mysqli_stmt_execute($stmt_user);
+                mysqli_stmt_close($stmt_user);
+
+            } else {
+
+                // Jika guru belum memiliki akun, buat akun baru
+                if ($password === '') {
+                    throw new Exception(
+                        "Guru belum memiliki akun. Isi password terlebih dahulu."
+                    );
+                }
+
+                $password_hash = password_hash(
+                    $password,
+                    PASSWORD_DEFAULT
+                );
+
+                $stmt_user = mysqli_prepare(
+                    $koneksi,
+                    "INSERT INTO t_users
+                    (name, email, password, role, created_at, updated_at)
+                    VALUES (?, ?, ?, 'guru', NOW(), NOW())"
+                );
+
+                mysqli_stmt_bind_param(
+                    $stmt_user,
+                    "sss",
+                    $nama_guru,
+                    $email_guru,
+                    $password_hash
+                );
+
+                mysqli_stmt_execute($stmt_user);
+
+                $user_id_lama = mysqli_insert_id($koneksi);
+
+                mysqli_stmt_close($stmt_user);
+            }
+
+            // Update data guru
+            $stmt_guru = mysqli_prepare(
+                $koneksi,
+                "UPDATE t_guru SET
+                 nip = ?,
+                 nama = ?,
+                 email = ?,
+                 status_aktif = ?,
+                 user_id = ?,
+                 updated_at = NOW()
+                 WHERE id = ?"
+            );
+
+            mysqli_stmt_bind_param(
+                $stmt_guru,
+                "sssiii",
+                $nip,
+                $nama_guru,
+                $email_guru,
+                $status,
+                $user_id_lama,
+                $id
+            );
+
+            mysqli_stmt_execute($stmt_guru);
+            mysqli_stmt_close($stmt_guru);
+
+        } else {
+            throw new Exception("Aksi tidak dikenal.");
+        }
+
+        mysqli_commit($koneksi);
+
+        header("Location: dashboard.php?page=kelola_guru");
+        exit;
+
+    } catch (Throwable $e) {
+
+        mysqli_rollback($koneksi);
+
+        $error = "Data guru gagal disimpan: " . $e->getMessage();
     }
-
-    header("Location: dashboard.php?page=kelola_guru");
-    exit;
 }
+
 
 /* ================
    CRUD KELAS
@@ -419,53 +710,129 @@ if (
 ) {
     $aksi = $_POST['aksi'] ?? '';
 
-    $nama = mysqli_real_escape_string(
-        $koneksi,
-        trim($_POST['nama'] ?? '')
-    );
+    $nama = trim($_POST['nama'] ?? '');
+    $mulai = $_POST['tanggal_mulai'] ?? '';
+    $selesai = $_POST['tanggal_selesai'] ?? '';
+    $status = (int)($_POST['status_aktif'] ?? 0);
 
-    $mulai = mysqli_real_escape_string(
-        $koneksi,
-        $_POST['tanggal_mulai'] ?? ''
-    );
+    try {
+        if ($nama === '') {
+            throw new Exception("Nama tahun ajaran wajib diisi.");
+        }
 
-    $selesai = mysqli_real_escape_string(
-        $koneksi,
-        $_POST['tanggal_selesai'] ?? ''
-    );
+        if (!in_array($status, [0, 1], true)) {
+            throw new Exception("Status tahun ajaran tidak valid.");
+        }
 
-    $status = (int)($_POST['status_aktif'] ?? 1);
+        mysqli_begin_transaction($koneksi);
 
-    if ($aksi === 'tambah') {
-        mysqli_query($koneksi, "
-            INSERT INTO t_tahun_ajaran
-            (
-                nama, tanggal_mulai, tanggal_selesai,
-                status_aktif, created_at, updated_at
-            )
-            VALUES
-            (
-                '$nama', '$mulai', '$selesai',
-                '$status', NOW(), NOW()
-            )
-        ");
-    } elseif ($aksi === 'edit') {
-        $id = (int)$_POST['id'];
+        if ($aksi === 'tambah') {
 
-        mysqli_query($koneksi, "
-            UPDATE t_tahun_ajaran SET
-                nama='$nama',
-                tanggal_mulai='$mulai',
-                tanggal_selesai='$selesai',
-                status_aktif='$status',
-                updated_at=NOW()
-            WHERE id='$id'
-        ");
+            // Jika data baru Aktif, nonaktifkan semua data lama dahulu.
+            if ($status === 1) {
+                mysqli_query(
+                    $koneksi,
+                    "UPDATE t_tahun_ajaran SET status_aktif = 0
+                     WHERE status_aktif = 1"
+                );
+            }
+
+            $stmt = mysqli_prepare(
+                $koneksi,
+                "INSERT INTO t_tahun_ajaran
+                 (nama, tanggal_mulai, tanggal_selesai,
+                  status_aktif, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, NOW(), NOW())"
+            );
+
+            mysqli_stmt_bind_param(
+                $stmt,
+                "sssi",
+                $nama,
+                $mulai,
+                $selesai,
+                $status
+            );
+
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+
+        } elseif ($aksi === 'edit') {
+
+            $id = (int)($_POST['id'] ?? 0);
+
+            if ($id <= 0) {
+                throw new Exception("ID tahun ajaran tidak valid.");
+            }
+
+            // Pastikan data yang akan diedit memang ada.
+            $cek = mysqli_prepare(
+                $koneksi,
+                "SELECT id FROM t_tahun_ajaran WHERE id = ? LIMIT 1"
+            );
+            mysqli_stmt_bind_param($cek, "i", $id);
+            mysqli_stmt_execute($cek);
+            $hasil_cek = mysqli_stmt_get_result($cek);
+            $data_ada = mysqli_fetch_assoc($hasil_cek);
+            mysqli_stmt_close($cek);
+
+            if (!$data_ada) {
+                throw new Exception("Data tahun ajaran tidak ditemukan.");
+            }
+
+            // Jika data edit dijadikan Aktif, nonaktifkan semua data lain.
+            if ($status === 1) {
+                $nonaktifkan = mysqli_prepare(
+                    $koneksi,
+                    "UPDATE t_tahun_ajaran
+                     SET status_aktif = 0
+                     WHERE id <> ? AND status_aktif = 1"
+                );
+
+                mysqli_stmt_bind_param($nonaktifkan, "i", $id);
+                mysqli_stmt_execute($nonaktifkan);
+                mysqli_stmt_close($nonaktifkan);
+            }
+
+            $stmt = mysqli_prepare(
+                $koneksi,
+                "UPDATE t_tahun_ajaran SET
+                    nama = ?,
+                    tanggal_mulai = ?,
+                    tanggal_selesai = ?,
+                    status_aktif = ?,
+                    updated_at = NOW()
+                 WHERE id = ?"
+            );
+
+            mysqli_stmt_bind_param(
+                $stmt,
+                "sssii",
+                $nama,
+                $mulai,
+                $selesai,
+                $status,
+                $id
+            );
+
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+
+        } else {
+            throw new Exception("Aksi tahun ajaran tidak dikenal.");
+        }
+
+        mysqli_commit($koneksi);
+
+        header("Location: dashboard.php?page=kelola_tahun_ajaran");
+        exit;
+
+    } catch (Throwable $e) {
+        mysqli_rollback($koneksi);
+        $error = "Tahun ajaran gagal disimpan: " . $e->getMessage();
     }
-
-    header("Location: dashboard.php?page=kelola_tahun_ajaran");
-    exit;
 }
+
 /* ===============
    CRUD KATEGORI
    =============== */
@@ -916,254 +1283,278 @@ if ($q) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        html {
-            scroll-behavior: smooth;
-        }
+    html {
+        scroll-behavior: smooth;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f0f6ff;
-            color: #263b59;
-        }
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f0f6ff;
+        color: #263b59;
+    }
 
-        /* SIDEBAR */
+    /* SIDEBAR */
+    .sidebar {
+        background: #e2efff;
+        min-height: 100vh;
+        padding: 20px 15px;
+        position: sticky;
+        top: 0;
+        border-right: 1px solid #cbdff8;
+    }
+
+    .sidebar-title {
+        color: #234b7b;
+        font-size: 21px;
+        font-weight: bold;
+        margin-bottom: 25px;
+    }
+
+    .menu-title {
+        color: #7188a6;
+        font-size: 12px;
+        margin-top: 15px;
+        margin-bottom: 8px;
+    }
+
+    .menu-link {
+        display: block;
+        color: #365577;
+        text-decoration: none;
+        padding: 10px 14px;
+        border-radius: 8px;
+        margin-bottom: 5px;
+        transition: 0.2s;
+    }
+
+    .menu-link:hover {
+        background: #bdd9ff;
+        color: #17365d;
+    }
+
+    .menu-link.active {
+        background: #8bbcff;
+        color: #17365d;
+        font-weight: bold;
+    }
+
+    /* CONTENT */
+    .content {
+        padding: 30px;
+    }
+
+    .page-title {
+        color: #234b7b;
+        font-weight: bold;
+        margin-bottom: 25px;
+    }
+
+    /* CARD */
+    .dashboard-card {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
+        margin-bottom: 20px;
+        border: 1px solid #e1ebf8;
+    }
+
+    .card-siswa {
+        background: #dceeff;
+    }
+
+    .card-guru {
+        background: #e7e4ff;
+    }
+
+    .card-kelas {
+        background: #d9f3f0;
+    }
+
+    .card-pelanggaran {
+        background: #fce5f0;
+    }
+
+    /* FORM */
+    .form-box {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
+        margin-bottom: 25px;
+        border: 1px solid #e1ebf8;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 8px;
+        border-color: #cfdef0;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #8bbcff;
+        box-shadow: 0 0 0 0.2rem rgba(139, 188, 255, 0.25);
+    }
+
+    /* BUTTON */
+    .btn-soft {
+        background: #8bbcff;
+        color: #17365d;
+        border: none;
+        border-radius: 8px;
+    }
+
+    .btn-soft:hover {
+        background: #6da9f5;
+        color: #17365d;
+    }
+
+    .btn-edit {
+        background: #d9e7ff;
+        color: #234b7b;
+        border: none;
+        border-radius: 7px;
+    }
+
+    .btn-edit:hover {
+        background: #bdd5ff;
+        color: #17365d;
+    }
+
+    .btn-delete {
+        background: #ffdfe5;
+        color: #8b3045;
+        border: none;
+        border-radius: 7px;
+    }
+
+    .btn-delete:hover {
+        background: #ffc7d2;
+        color: #762338;
+    }
+
+    /* TABLE */
+    .table-box {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
+        border: 1px solid #e1ebf8;
+    }
+
+    .table th {
+        background: #d9eaff;
+        color: #234b7b;
+        white-space: nowrap;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .table tbody tr:hover td {
+        background: #f2f7ff;
+    }
+
+    /* ABOUT */
+    .about-box {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
+        border: 1px solid #e1ebf8;
+    }
+
+    .about-header {
+        background: #d9eaff;
+        color: #234b7b;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    /* PENCARIAN TABEL */
+    .search-table-box {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 15px;
+    }
+
+    .search-table {
+        width: 100%;
+        max-width: 350px;
+        padding: 10px 14px;
+        border: 1px solid #cbdff5;
+        border-radius: 10px;
+        outline: none;
+        background: #ffffff;
+        color: #334155;
+        transition: 0.2s;
+    }
+
+    .search-table:focus {
+        border-color: #8bbcff;
+        box-shadow: 0 0 0 3px rgba(139, 188, 255, 0.2);
+    }
+
+    .search-info {
+        font-size: 13px;
+        color: #7188a6;
+        margin-top: 5px;
+    }
+
+    /* MOBILE */
+    @media (max-width: 768px) {
         .sidebar {
-            background: #e2efff;
-            min-height: 100vh;
-            padding: 20px 15px;
-            position: sticky;
-            top: 0;
-            border-right: 1px solid #cbdff8;
+            min-height: auto;
+            position: relative;
         }
 
-        .sidebar-title {
-            color: #234b7b;
-            font-size: 21px;
-            font-weight: bold;
-            margin-bottom: 25px;
-        }
-
-        .menu-title {
-            color: #7188a6;
-            font-size: 12px;
-            margin-top: 15px;
-            margin-bottom: 8px;
-        }
-
-        .menu-link {
-            display: block;
-            color: #365577;
-            text-decoration: none;
-            padding: 10px 14px;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            transition: 0.2s;
-        }
-
-        .menu-link:hover {
-            background: #bdd9ff;
-            color: #17365d;
-        }
-
-        .menu-link.active {
-            background: #8bbcff;
-            color: #17365d;
-            font-weight: bold;
-        }
-
-        /* CONTENT */
         .content {
-            padding: 30px;
+            padding: 15px;
         }
 
-        .page-title {
-            color: #234b7b;
-            font-weight: bold;
-            margin-bottom: 25px;
-        }
-
-        /* CARD */
-        .dashboard-card {
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
-            margin-bottom: 20px;
-            border: 1px solid #e1ebf8;
-        }
-
-        .card-siswa {
-            background: #dceeff;
-        }
-
-        .card-guru {
-            background: #e7e4ff;
-        }
-
-        .card-kelas {
-            background: #d9f3f0;
-        }
-
-        .card-pelanggaran {
-            background: #fce5f0;
-        }
-
-        /* FORM */
-        .form-box {
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
-            margin-bottom: 25px;
-            border: 1px solid #e1ebf8;
-        }
-
-        .form-control,
-        .form-select {
-            border-radius: 8px;
-            border-color: #cfdef0;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #8bbcff;
-            box-shadow: 0 0 0 0.2rem rgba(139, 188, 255, 0.25);
-        }
-
-        /* BUTTON */
-        .btn-soft {
-            background: #8bbcff;
-            color: #17365d;
-            border: none;
-            border-radius: 8px;
-        }
-
-        .btn-soft:hover {
-            background: #6da9f5;
-            color: #17365d;
-        }
-
-        .btn-edit {
-            background: #d9e7ff;
-            color: #234b7b;
-            border: none;
-            border-radius: 7px;
-        }
-
-        .btn-edit:hover {
-            background: #bdd5ff;
-            color: #17365d;
-        }
-
-        .btn-delete {
-            background: #ffdfe5;
-            color: #8b3045;
-            border: none;
-            border-radius: 7px;
-        }
-
-        .btn-delete:hover {
-            background: #ffc7d2;
-            color: #762338;
-        }
-
-        /* TABLE */
         .table-box {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
-            border: 1px solid #e1ebf8;
+            overflow-x: auto;
         }
+    }
 
-        .table th {
-            background: #d9eaff;
-            color: #234b7b;
-            white-space: nowrap;
-        }
-
-        .table td {
-            vertical-align: middle;
-        }
-
-        .table tbody tr:hover td {
-            background: #f2f7ff;
-        }
-
-        /* ABOUT */
-        .about-box {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(65, 105, 160, 0.10);
-            border: 1px solid #e1ebf8;
-        }
-
-        .about-header {
-            background: #d9eaff;
-            color: #234b7b;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        /* PENCARIAN TABEL */
+    @media (max-width: 576px) {
         .search-table-box {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 15px;
+            justify-content: stretch;
         }
 
         .search-table {
-            width: 100%;
-            max-width: 350px;
-            padding: 10px 14px;
-            border: 1px solid #cbdff5;
-            border-radius: 10px;
-            outline: none;
-            background: #ffffff;
-            color: #334155;
-            transition: 0.2s;
+            max-width: 100%;
+        }
+    }
+
+    /* KHUSUS SAAT CETAK */
+    @media print {
+
+        /* Sembunyikan pencarian tabel */
+        .search-table-box,
+        .search-info,
+        .search-table {
+            display: none !important;
         }
 
-        .search-table:focus {
-            border-color: #8bbcff;
-            box-shadow: 0 0 0 3px rgba(139, 188, 255, 0.2);
+        /* Sembunyikan kontrol DataTables */
+        .dataTables_filter,
+        .dataTables_length,
+        .dataTables_info,
+        .dataTables_paginate,
+        .dt-search,
+        .dt-length,
+        .dt-info,
+        .dt-paging {
+            display: none !important;
         }
+    }
+</style>
 
-        .search-info {
-            font-size: 13px;
-            color: #7188a6;
-            margin-top: 5px;
-        }
-
-        /* MOBILE */
-        @media (max-width: 768px) {
-            .sidebar {
-                min-height: auto;
-                position: relative;
-            }
-
-            .content {
-                padding: 15px;
-            }
-
-            .table-box {
-                overflow-x: auto;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .search-table-box {
-                justify-content: stretch;
-            }
-
-            .search-table {
-                max-width: 100%;
-            }
-        }
-    </style>
 </head>
 
 <body>

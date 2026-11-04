@@ -1,3 +1,4 @@
+
 <?php
 /* Halaman kelola_siswa; dipanggil melalui dashboard.php */
 
@@ -103,6 +104,7 @@ if ($edit_id > 0) {
             <div class="col-md-6 mb-3">
                 <label>Jenis Kelamin</label>
                 <select name="jenis_kelamin" class="form-select">
+
                     <option value="L"
                         <?= (($data_edit['jenis_kelamin'] ?? '') === 'L') ? 'selected' : '' ?>>
                         Laki-laki
@@ -112,6 +114,7 @@ if ($edit_id > 0) {
                         <?= (($data_edit['jenis_kelamin'] ?? '') === 'P') ? 'selected' : '' ?>>
                         Perempuan
                     </option>
+
                 </select>
             </div>
 
@@ -130,6 +133,7 @@ if ($edit_id > 0) {
             <div class="col-md-6 mb-3">
                 <label>Status</label>
                 <select name="status_aktif" class="form-select">
+
                     <option value="1"
                         <?= (($data_edit['status_aktif'] ?? 1) == 1) ? 'selected' : '' ?>>
                         Aktif
@@ -139,6 +143,7 @@ if ($edit_id > 0) {
                         <?= (($data_edit['status_aktif'] ?? 1) == 0) ? 'selected' : '' ?>>
                         Tidak Aktif
                     </option>
+
                 </select>
             </div>
 
@@ -177,7 +182,10 @@ if ($edit_id > 0) {
 ========================= -->
 
 <?php
-// Hitung jumlah siswa
+
+// =========================
+// HITUNG JUMLAH SISWA
+// =========================
 $hasil_total = mysqli_query(
     $koneksi,
     "SELECT COUNT(*) AS total FROM t_siswa"
@@ -193,11 +201,15 @@ $total_halaman = max(
 $halaman = min($halaman, $total_halaman);
 $offset = ($halaman - 1) * $per_halaman;
 
-// Ambil data siswa sesuai halaman
+
+// =========================
+// AMBIL DATA SISWA
+// SISWA BARU DITAMPILKAN DULU
+// =========================
 $stmt_siswa = mysqli_prepare(
     $koneksi,
     "SELECT * FROM t_siswa
-     ORDER BY id DESC
+     ORDER BY id ASC
      LIMIT ? OFFSET ?"
 );
 
@@ -210,6 +222,7 @@ mysqli_stmt_bind_param(
 
 mysqli_stmt_execute($stmt_siswa);
 $q = mysqli_stmt_get_result($stmt_siswa);
+
 ?>
 
 <div class="table-box">
@@ -245,27 +258,39 @@ $q = mysqli_stmt_get_result($stmt_siswa);
                     <?php while ($r = mysqli_fetch_assoc($q)): ?>
 
                         <tr>
+
                             <td><?= $no++ ?></td>
+
                             <td><?= e($r['nis']) ?></td>
+
                             <td><?= e($r['nisn'] ?? '') ?></td>
+
                             <td><?= e($r['nama']) ?></td>
+
                             <td><?= e($r['jenis_kelamin']) ?></td>
+
                             <td><?= e($r['tanggal_lahir'] ?? '') ?></td>
+
                             <td><?= e($r['alamat'] ?? '') ?></td>
 
                             <td>
                                 <?php if ($r['status_aktif']): ?>
+
                                     <span class="badge bg-success">
                                         Aktif
                                     </span>
+
                                 <?php else: ?>
+
                                     <span class="badge bg-secondary">
                                         Tidak Aktif
                                     </span>
+
                                 <?php endif; ?>
                             </td>
 
                             <td>
+
                                 <a
                                     href="dashboard.php?page=kelola_siswa&edit=<?= (int)$r['id'] ?>"
                                     class="btn btn-edit btn-sm"
@@ -280,7 +305,9 @@ $q = mysqli_stmt_get_result($stmt_siswa);
                                 >
                                     Hapus
                                 </a>
+
                             </td>
+
                         </tr>
 
                     <?php endwhile; ?>
@@ -301,7 +328,11 @@ $q = mysqli_stmt_get_result($stmt_siswa);
 
     </div>
 
-    <!-- PAGINATION DI SISI KANAN -->
+
+    <!-- =========================
+         PAGINATION
+    ========================= -->
+
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
         <small class="text-muted">
@@ -314,35 +345,46 @@ $q = mysqli_stmt_get_result($stmt_siswa);
 
             <ul class="pagination justify-content-end flex-wrap mb-0">
 
+                <!-- SEBELUMNYA -->
                 <li class="page-item <?= $halaman <= 1 ? 'disabled' : '' ?>">
+
                     <a
                         class="page-link"
                         href="dashboard.php?page=kelola_siswa&halaman=<?= max(1, $halaman - 1) ?>"
                     >
                         Sebelumnya
                     </a>
+
                 </li>
 
+
+                <!-- NOMOR HALAMAN -->
                 <?php for ($i = 1; $i <= $total_halaman; $i++): ?>
 
                     <li class="page-item <?= $i === $halaman ? 'active' : '' ?>">
+
                         <a
                             class="page-link"
                             href="dashboard.php?page=kelola_siswa&halaman=<?= $i ?>"
                         >
                             <?= $i ?>
                         </a>
+
                     </li>
 
                 <?php endfor; ?>
 
+
+                <!-- SELANJUTNYA -->
                 <li class="page-item <?= $halaman >= $total_halaman ? 'disabled' : '' ?>">
+
                     <a
                         class="page-link"
                         href="dashboard.php?page=kelola_siswa&halaman=<?= min($total_halaman, $halaman + 1) ?>"
                     >
                         Selanjutnya
                     </a>
+
                 </li>
 
             </ul>
@@ -353,4 +395,6 @@ $q = mysqli_stmt_get_result($stmt_siswa);
 
 </div>
 
-<?php mysqli_stmt_close($stmt_siswa); ?>
+<?php
+mysqli_stmt_close($stmt_siswa);
+?>

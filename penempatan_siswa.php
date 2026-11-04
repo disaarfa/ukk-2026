@@ -23,6 +23,8 @@ if ($edit_id > 0) {
         <?php endif; ?>
 
         <div class="row">
+
+            <!-- SISWA -->
             <div class="col-md-4 mb-3">
                 <label>Siswa</label>
                 <select name="siswa_id" class="form-select" required>
@@ -31,6 +33,7 @@ if ($edit_id > 0) {
                         $koneksi,
                         "SELECT id,nama FROM t_siswa ORDER BY nama ASC"
                     );
+
                     while ($s = mysqli_fetch_assoc($qs_penempatan)):
                     ?>
                         <option value="<?= $s['id'] ?>"
@@ -41,14 +44,19 @@ if ($edit_id > 0) {
                 </select>
             </div>
 
+            <!-- TAHUN AJARAN: HANYA YANG AKTIF -->
             <div class="col-md-4 mb-3">
                 <label>Tahun Ajaran</label>
                 <select name="tahun_ajaran_id" class="form-select" required>
                     <?php
                     $qt_penempatan = mysqli_query(
                         $koneksi,
-                        "SELECT id,nama FROM t_tahun_ajaran ORDER BY id DESC"
+                        "SELECT id,nama
+                         FROM t_tahun_ajaran
+                         WHERE status_aktif = 1
+                         ORDER BY id DESC"
                     );
+
                     while ($t = mysqli_fetch_assoc($qt_penempatan)):
                     ?>
                         <option value="<?= $t['id'] ?>"
@@ -59,6 +67,7 @@ if ($edit_id > 0) {
                 </select>
             </div>
 
+            <!-- KELAS -->
             <div class="col-md-4 mb-3">
                 <label>Kelas</label>
                 <select name="kelas_id" class="form-select" required>
@@ -67,6 +76,7 @@ if ($edit_id > 0) {
                         $koneksi,
                         "SELECT id,nama FROM t_kelas ORDER BY nama ASC"
                     );
+
                     while ($k = mysqli_fetch_assoc($qk_penempatan)):
                     ?>
                         <option value="<?= $k['id'] ?>"
@@ -77,46 +87,93 @@ if ($edit_id > 0) {
                 </select>
             </div>
 
+            <!-- TANGGAL MULAI -->
             <div class="col-md-4 mb-3">
                 <label>Tanggal Mulai</label>
-                <input type="date" name="tanggal_mulai" class="form-control"
-                    value="<?= e($data_edit['tanggal_mulai'] ?? '') ?>">
+                <input
+                    type="date"
+                    name="tanggal_mulai"
+                    class="form-control"
+                    value="<?= e($data_edit['tanggal_mulai'] ?? '') ?>"
+                >
             </div>
 
+            <!-- TANGGAL SELESAI -->
             <div class="col-md-4 mb-3">
                 <label>Tanggal Selesai</label>
-                <input type="date" name="tanggal_selesai" class="form-control"
-                    value="<?= e($data_edit['tanggal_selesai'] ?? '') ?>">
+                <input
+                    type="date"
+                    name="tanggal_selesai"
+                    class="form-control"
+                    value="<?= e($data_edit['tanggal_selesai'] ?? '') ?>"
+                >
             </div>
 
+            <!-- STATUS -->
             <div class="col-md-4 mb-3">
                 <label>Status</label>
                 <select name="status_aktif" class="form-select">
-                    <option value="1" <?= (($data_edit['status_aktif'] ?? 1) == 1) ? 'selected' : '' ?>>Aktif</option>
-                    <option value="0" <?= (($data_edit['status_aktif'] ?? 1) == 0) ? 'selected' : '' ?>>Tidak Aktif</option>
+                    <option value="1"
+                        <?= (($data_edit['status_aktif'] ?? 1) == 1) ? 'selected' : '' ?>>
+                        Aktif
+                    </option>
+
+                    <option value="0"
+                        <?= (($data_edit['status_aktif'] ?? 1) == 0) ? 'selected' : '' ?>>
+                        Tidak Aktif
+                    </option>
                 </select>
             </div>
+
         </div>
 
-        <button class="btn btn-soft"><?= $data_edit ? 'Update' : 'Tambah' ?></button>
+        <button class="btn btn-soft">
+            <?= $data_edit ? 'Update' : 'Tambah' ?>
+        </button>
 
         <?php if ($data_edit): ?>
-            <a href="dashboard.php?page=penempatan_siswa" class="btn btn-secondary">Batal</a>
+            <a href="dashboard.php?page=penempatan_siswa"
+               class="btn btn-secondary">
+                Batal
+            </a>
         <?php endif; ?>
+
     </form>
 </div>
 
 <?php
+// PAGINATION
 $per_halaman_penempatan = 10;
 
-$total_query_penempatan = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_kelas_siswa");
-$total_data_penempatan = (int) mysqli_fetch_assoc($total_query_penempatan)['total'];
+$total_query_penempatan = mysqli_query(
+    $koneksi,
+    "SELECT COUNT(*) AS total FROM t_kelas_siswa"
+);
 
-$total_halaman_penempatan = max(1, (int) ceil($total_data_penempatan / $per_halaman_penempatan));
-$halaman_penempatan = max(1, (int) ($_GET['halaman'] ?? 1));
-$halaman_penempatan = min($halaman_penempatan, $total_halaman_penempatan);
-$offset_penempatan = ($halaman_penempatan - 1) * $per_halaman_penempatan;
+$total_data_penempatan = (int) mysqli_fetch_assoc(
+    $total_query_penempatan
+)['total'];
 
+$total_halaman_penempatan = max(
+    1,
+    (int) ceil($total_data_penempatan / $per_halaman_penempatan)
+);
+
+$halaman_penempatan = max(
+    1,
+    (int) ($_GET['halaman'] ?? 1)
+);
+
+$halaman_penempatan = min(
+    $halaman_penempatan,
+    $total_halaman_penempatan
+);
+
+$offset_penempatan = (
+    $halaman_penempatan - 1
+) * $per_halaman_penempatan;
+
+// QUERY DATA PENEMPATAN
 $q_penempatan = mysqli_query($koneksi, "
     SELECT
         ks.*,
@@ -124,9 +181,12 @@ $q_penempatan = mysqli_query($koneksi, "
         k.nama AS nama_kelas,
         ta.nama AS tahun
     FROM t_kelas_siswa ks
-    LEFT JOIN t_siswa s ON ks.siswa_id=s.id
-    LEFT JOIN t_kelas k ON ks.kelas_id=k.id
-    LEFT JOIN t_tahun_ajaran ta ON ks.tahun_ajaran_id=ta.id
+    LEFT JOIN t_siswa s
+        ON ks.siswa_id = s.id
+    LEFT JOIN t_kelas k
+        ON ks.kelas_id = k.id
+    LEFT JOIN t_tahun_ajaran ta
+        ON ks.tahun_ajaran_id = ta.id
     ORDER BY ks.id DESC
     LIMIT $offset_penempatan, $per_halaman_penempatan
 ");
@@ -135,10 +195,12 @@ $nomor_penempatan = $offset_penempatan + 1;
 ?>
 
 <div class="table-box">
+
     <h4>Data Penempatan Siswa</h4>
 
     <div class="table-responsive">
         <table class="table table-bordered">
+
             <thead>
                 <tr>
                     <th>No</th>
@@ -149,60 +211,122 @@ $nomor_penempatan = $offset_penempatan + 1;
                     <th>Aksi</th>
                 </tr>
             </thead>
+
             <tbody>
+
                 <?php if ($total_data_penempatan > 0): ?>
+
                     <?php while ($r = mysqli_fetch_assoc($q_penempatan)): ?>
+
                         <tr>
                             <td><?= $nomor_penempatan++ ?></td>
-                            <td><?= e($r['nama_siswa'] ?? '') ?></td>
-                            <td><?= e($r['tahun'] ?? '') ?></td>
-                            <td><?= e($r['nama_kelas'] ?? '') ?></td>
+
+                            <td>
+                                <?= e($r['nama_siswa'] ?? '') ?>
+                            </td>
+
+                            <td>
+                                <?= e($r['tahun'] ?? '') ?>
+                            </td>
+
+                            <td>
+                                <?= e($r['nama_kelas'] ?? '') ?>
+                            </td>
+
                             <td>
                                 <?= $r['status_aktif']
                                     ? '<span class="badge bg-success">Aktif</span>'
                                     : '<span class="badge bg-secondary">Tidak Aktif</span>' ?>
                             </td>
-                            <td>
-                                <a href="dashboard.php?page=penempatan_siswa&edit=<?= $r['id'] ?>"
-                                   class="btn btn-edit btn-sm">Edit</a>
 
-                                <a href="dashboard.php?page=penempatan_siswa&hapus=penempatan&id=<?= $r['id'] ?>"
-                                   class="btn btn-delete btn-sm"
-                                   onclick="return confirm('Yakin ingin menghapus penempatan ini?')">Hapus</a>
+                            <td>
+                                <a
+                                    href="dashboard.php?page=penempatan_siswa&edit=<?= $r['id'] ?>"
+                                    class="btn btn-edit btn-sm"
+                                >
+                                    Edit
+                                </a>
+
+                                <a
+                                    href="dashboard.php?page=penempatan_siswa&hapus=penempatan&id=<?= $r['id'] ?>"
+                                    class="btn btn-delete btn-sm"
+                                    onclick="return confirm('Yakin ingin menghapus penempatan ini?')"
+                                >
+                                    Hapus
+                                </a>
                             </td>
                         </tr>
+
                     <?php endwhile; ?>
+
                 <?php else: ?>
+
                     <tr>
-                        <td colspan="6" class="text-center">Belum ada data penempatan siswa.</td>
+                        <td colspan="6" class="text-center">
+                            Belum ada data penempatan siswa.
+                        </td>
                     </tr>
+
                 <?php endif; ?>
+
             </tbody>
         </table>
     </div>
 
+    <!-- PAGINATION -->
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+
         <small>
-            Menampilkan <?= $total_data_penempatan ? $offset_penempatan + 1 : 0 ?>–<?= min($offset_penempatan + $per_halaman_penempatan, $total_data_penempatan) ?>
+            Menampilkan
+            <?= $total_data_penempatan ? $offset_penempatan + 1 : 0 ?>
+            –
+            <?= min(
+                $offset_penempatan + $per_halaman_penempatan,
+                $total_data_penempatan
+            ) ?>
             dari <?= $total_data_penempatan ?> data
         </small>
 
         <nav aria-label="Pagination penempatan siswa">
             <ul class="pagination pagination-sm mb-0">
+
                 <li class="page-item <?= $halaman_penempatan <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="dashboard.php?page=penempatan_siswa&halaman=<?= max(1, $halaman_penempatan - 1) ?>">Sebelumnya</a>
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=penempatan_siswa&halaman=<?= max(1, $halaman_penempatan - 1) ?>"
+                    >
+                        Sebelumnya
+                    </a>
                 </li>
 
-                <?php for ($i = 1; $i <= $total_halaman_penempatan; $i++): ?>
+                <?php for (
+                    $i = 1;
+                    $i <= $total_halaman_penempatan;
+                    $i++
+                ): ?>
+
                     <li class="page-item <?= $i == $halaman_penempatan ? 'active' : '' ?>">
-                        <a class="page-link" href="dashboard.php?page=penempatan_siswa&halaman=<?= $i ?>"><?= $i ?></a>
+                        <a
+                            class="page-link"
+                            href="dashboard.php?page=penempatan_siswa&halaman=<?= $i ?>"
+                        >
+                            <?= $i ?>
+                        </a>
                     </li>
+
                 <?php endfor; ?>
 
                 <li class="page-item <?= $halaman_penempatan >= $total_halaman_penempatan ? 'disabled' : '' ?>">
-                    <a class="page-link" href="dashboard.php?page=penempatan_siswa&halaman=<?= min($total_halaman_penempatan, $halaman_penempatan + 1) ?>">Selanjutnya</a>
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=penempatan_siswa&halaman=<?= min($total_halaman_penempatan, $halaman_penempatan + 1) ?>"
+                    >
+                        Selanjutnya
+                    </a>
                 </li>
+
             </ul>
         </nav>
+
     </div>
 </div>
