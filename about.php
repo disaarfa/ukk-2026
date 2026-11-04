@@ -192,7 +192,7 @@
        <img src="foto.afa.png" alt="Foto Profil" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
 
         <div>
-            <h4>Arfa Disa Okamameliza</h4>
+            <h4>Arfa Disa Okamaleliza</h4>
 
             <p>
                 <span class="badge"
