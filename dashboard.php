@@ -53,7 +53,8 @@ $menu_admin = [
     'penempatan_siswa' => 'Penempatan Siswa',
     'kelola_wali_kelas' => 'Wali Kelas',
     'kelola_kategori' => 'Kategori Pelanggaran',
-    'kelola_jenis_pelanggaran' => 'Jenis Pelanggaran'
+    'kelola_jenis_pelanggaran' => 'Jenis Pelanggaran',
+    'laporan' => 'Laporan'
 ];
 
 $menu_guru = [
@@ -62,6 +63,11 @@ $menu_guru = [
     'laporan' => 'Laporan',
     'riwayat' => 'Riwayat',
     'rekap_poin' => 'Rekap Poin'
+];
+$menu_wali_kelas = [
+    'laporan' => 'Laporan',
+    'rekap_poin' => 'Rekap Poin',
+     'riwayat' => 'Riwayat'
 ];
 
 $allowed_pages = [
@@ -83,10 +89,16 @@ if ($role === 'guru') {
     );
 }
 
-if (!in_array($page, $allowed_pages)) {
-    $page = 'dashboard';
+if ($role === 'wali_kelas') {
+    $allowed_pages = array_merge(
+        $allowed_pages,
+        array_keys($menu_wali_kelas)
+    );
 }
 
+if (!in_array($page, $allowed_pages, true)) {
+    $page = 'dashboard';
+}
 /* =====================
    EXPORT LAPORAN CSV
    ===================== */
@@ -1601,6 +1613,19 @@ if ($q) {
                     </a>
                 <?php endforeach; ?>
             <?php endif; ?>
+
+            <?php if ($role === 'wali_kelas'): ?>
+    <div class="menu-title">MENU WALI KELAS</div>
+
+    <?php foreach ($menu_wali_kelas as $link => $text): ?>
+        <a
+            href="dashboard.php?page=<?= e($link) ?>"
+            class="menu-link <?= $page === $link ? 'active' : '' ?>"
+        >
+            <?= e($text) ?>
+        </a>
+    <?php endforeach; ?>
+<?php endif; ?>
 
             <div class="menu-title">LAINNYA</div>
 

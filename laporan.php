@@ -1,5 +1,5 @@
-<?php /* Halaman laporan; dipanggil melalui dashboard.php */ ?>
 
+<?php /* Halaman laporan; dipanggil melalui dashboard.php */ ?>
 
 <div class="dashboard-card">
 
@@ -62,50 +62,109 @@
                 ? max(1, (int) $_GET['halaman_laporan'])
                 : 1;
 
-            // Hitung total data
+            /* HITUNG TOTAL DATA */
+
             $total_query = mysqli_query($koneksi, "
                 SELECT COUNT(*) AS total
                 FROM t_pelanggaran_siswa
             ");
 
-            $total_data = (int) mysqli_fetch_assoc($total_query)['total'];
+            $total_data = $total_query
+                ? (int) mysqli_fetch_assoc($total_query)['total']
+                : 0;
 
             $total_halaman = max(
                 1,
                 (int) ceil($total_data / $batas)
             );
 
-            // Pastikan halaman valid
+            /* VALIDASI HALAMAN */
+
             $halaman = min($halaman, $total_halaman);
 
-            // Tentukan posisi data
             $posisi = ($halaman - 1) * $batas;
 
             $no = $posisi + 1;
 
-            // Ambil data berdasarkan halaman
+            /* =========================
+               AMBIL DATA LAPORAN
+               NAMA DARI TABEL T_SISWA
+               ========================= */
+
             $q = mysqli_query($koneksi, "
-                SELECT *
-                FROM t_pelanggaran_siswa
-                ORDER BY tanggal DESC, id DESC
+
+                SELECT
+                    ps.*,
+
+                    COALESCE(
+                        NULLIF(s.nama, ''),
+                        ps.nama_siswa
+                    ) AS nama_tampil
+
+                FROM t_pelanggaran_siswa ps
+
+                LEFT JOIN t_siswa s
+                    ON s.id = ps.siswa_id
+
+                ORDER BY
+                    ps.tanggal DESC,
+                    ps.id DESC
+
                 LIMIT $posisi, $batas
+
             ");
 
-            while ($r = mysqli_fetch_assoc($q)):
+            if ($q && mysqli_num_rows($q) > 0):
+
+                while ($r = mysqli_fetch_assoc($q)):
 
             ?>
 
                 <tr>
+
                     <td><?= $no++ ?></td>
-                    <td><?= e($r['nama_siswa']) ?></td>
-                    <td><?= e($r['nama_kelas']) ?></td>
-                    <td><?= e($r['nama_pelanggaran']) ?></td>
-                    <td><?= e($r['poin']) ?></td>
-                    <td><?= e($r['tanggal']) ?></td>
-                    <td><?= e($r['status']) ?></td>
+
+                    <td>
+                        <?= e($r['nama_tampil']) ?>
+                    </td>
+
+                    <td>
+                        <?= e($r['nama_kelas']) ?>
+                    </td>
+
+                    <td>
+                        <?= e($r['nama_pelanggaran']) ?>
+                    </td>
+
+                    <td>
+                        <?= e($r['poin']) ?>
+                    </td>
+
+                    <td>
+                        <?= e($r['tanggal']) ?>
+                    </td>
+
+                    <td>
+                        <?= e($r['status']) ?>
+                    </td>
+
                 </tr>
 
-            <?php endwhile; ?>
+            <?php
+
+                endwhile;
+
+            else:
+
+            ?>
+
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        Belum ada data pelanggaran siswa.
+                    </td>
+                </tr>
+
+            <?php endif; ?>
 
             </tbody>
 
@@ -114,6 +173,7 @@
     </div>
 
     <!-- PAGINATION DI SISI KANAN -->
+
     <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3 no-print">
 
         <small class="text-muted">
@@ -126,7 +186,8 @@
 
             <ul class="pagination pagination-sm mb-0">
 
-                <!-- Sebelumnya -->
+                <!-- SEBELUMNYA -->
+
                 <li class="page-item <?= ($halaman <= 1) ? 'disabled' : '' ?>">
 
                     <a class="page-link"
@@ -136,7 +197,8 @@
 
                 </li>
 
-                <!-- Nomor Halaman -->
+                <!-- NOMOR HALAMAN -->
+
                 <?php
 
                 $mulai = max(1, $halaman - 2);
@@ -157,7 +219,8 @@
 
                 <?php endfor; ?>
 
-                <!-- Berikutnya -->
+                <!-- BERIKUTNYA -->
+
                 <li class="page-item <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>">
 
                     <a class="page-link"
@@ -176,11 +239,13 @@
 </div>
 
 <style>
+
 .judul-cetak {
     display: none;
 }
 
 @media print {
+
     body * {
         visibility: hidden;
     }
@@ -233,5 +298,7 @@
         size: landscape;
         margin: 1cm;
     }
+
 }
+
 </style>

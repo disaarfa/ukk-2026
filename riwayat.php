@@ -1,179 +1,197 @@
-<?php /* Halaman riwayat; dipanggil melalui dashboard.php */ ?>
 
+<?php /* Halaman riwayat; dipanggil melalui dashboard.php */ ?>
 
 <div class="table-box">
 
-<h4>
-Riwayat Pelanggaran
-</h4>
+    <h4>Riwayat Pelanggaran</h4>
 
-<div class="table-responsive">
+    <?php
 
-<table class="table table-bordered">
+    $user_id = (int) ($_SESSION['user_id'] ?? 0);
+    $role = strtolower(trim($_SESSION['role'] ?? ''));
 
-<thead>
+    $filter_sql = "";
 
-<tr>
-<th>No</th>
-<th>Tanggal</th>
-<th>Siswa</th>
-<th>Kelas</th>
-<th>Pelanggaran</th>
-<th>Poin</th>
-<th>Tindakan</th>
-<th>Status</th>
-</tr>
+    if ($role !== 'admin') {
 
-</thead>
+        $filter_sql = "
+            WHERE EXISTS (
+                SELECT 1
+                FROM t_users u
+                INNER JOIN t_guru g
+                    ON LOWER(TRIM(g.email)) = LOWER(TRIM(u.email))
+                INNER JOIN t_wali_kelas wk
+                    ON wk.guru_id = g.id
+                WHERE u.id = $user_id
+                    AND wk.kelas_id = ps.kelas_id
+                    AND wk.status_aktif = 1
+                    AND wk.tanggal_mulai <= CURDATE()
+                    AND (
+                        wk.tanggal_selesai IS NULL
+                        OR wk.tanggal_selesai >= CURDATE()
+                    )
+            )
+        ";
 
-<tbody>
+    }
 
-<?php
+    /* PAGINATION */
 
-/* =========================
-   PAGINATION 10 DATA
-   ========================= */
+    $batas = 10;
 
-$batas = 10;
+    $halaman = isset($_GET['halaman_riwayat'])
+        ? max(1, (int) $_GET['halaman_riwayat'])
+        : 1;
 
-$halaman = isset($_GET['halaman_riwayat'])
-    ? max(1, (int) $_GET['halaman_riwayat'])
-    : 1;
+    /* HITUNG TOTAL DATA */
 
-/* Hitung seluruh data */
+    $total_query = mysqli_query($koneksi, "
+        SELECT COUNT(*) AS total
+        FROM t_pelanggaran_siswa ps
+        $filter_sql
+    ");
 
-$total_query = mysqli_query($koneksi, "
-    SELECT COUNT(*) AS total
-    FROM t_pelanggaran_siswa
-");
+    $total_data = $total_query
+        ? (int) mysqli_fetch_assoc($total_query)['total']
+        : 0;
 
-$total_data = (int) mysqli_fetch_assoc($total_query)['total'];
+    $total_halaman = max(
+        1,
+        (int) ceil($total_data / $batas)
+    );
 
-$total_halaman = max(
-    1,
-    (int) ceil($total_data / $batas)
-);
+    $halaman = min($halaman, $total_halaman);
 
-/* Pastikan halaman valid */
+    $posisi = ($halaman - 1) * $batas;
 
-$halaman = min($halaman, $total_halaman);
+    $no = $posisi + 1;
 
-/* Tentukan posisi data */
+    /* AMBIL DATA RIWAYAT */
 
-$posisi = ($halaman - 1) * $batas;
+    $q = mysqli_query($koneksi, "
+        SELECT ps.*
+        FROM t_pelanggaran_siswa ps
+        $filter_sql
+        ORDER BY ps.tanggal DESC, ps.id DESC
+        LIMIT $posisi, $batas
+    ");
 
-$no = $posisi + 1;
+    ?>
 
-/* Ambil data sesuai halaman */
+    <div class="table-responsive">
 
-$q = mysqli_query($koneksi, "
-    SELECT *
-    FROM t_pelanggaran_siswa
-    ORDER BY tanggal DESC, id DESC
-    LIMIT $posisi, $batas
-");
+        <table class="table table-bordered">
 
-while ($r = mysqli_fetch_assoc($q)):
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Tanggal</th>
+                    <th>Siswa</th>
+                    <th>Kelas</th>
+                    <th>Pelanggaran</th>
+                    <th>Poin</th>
+                    <th>Tindakan</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
 
-?>
+            <tbody>
 
-<tr>
+            <?php if ($q && mysqli_num_rows($q) > 0): ?>
 
-<td><?= $no++ ?></td>
+                <?php while ($r = mysqli_fetch_assoc($q)): ?>
 
-<td><?= e($r['tanggal']) ?></td>
+                    <tr>
+                        <td><?= $no++ ?></td>
+                        <td><?= e($r['tanggal']) ?></td>
+                        <td><?= e($r['nama_siswa']) ?></td>
+                        <td><?= e($r['nama_kelas']) ?></td>
+                        <td><?= e($r['nama_pelanggaran']) ?></td>
+                        <td><?= e($r['poin']) ?></td>
+                        <td><?= e($r['tindakan']) ?></td>
+                        <td><?= e($r['status']) ?></td>
+                    </tr>
 
-<td><?= e($r['nama_siswa']) ?></td>
+                <?php endwhile; ?>
 
-<td><?= e($r['nama_kelas']) ?></td>
+            <?php else: ?>
 
-<td><?= e($r['nama_pelanggaran']) ?></td>
+                <tr>
+                    <td colspan="8" class="text-center text-muted">
+                        Belum ada riwayat pelanggaran untuk kelas yang diampu.
+                    </td>
+                </tr>
 
-<td><?= e($r['poin']) ?></td>
+            <?php endif; ?>
 
-<td><?= e($r['tindakan']) ?></td>
+            </tbody>
 
-<td><?= e($r['status']) ?></td>
+        </table>
 
-</tr>
+    </div>
 
-<?php endwhile; ?>
+    <!-- PAGINATION -->
 
-</tbody>
+    <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3">
 
-</table>
+        <small class="text-muted">
+            Halaman <?= $halaman ?>
+            dari <?= $total_halaman ?>
+            (<?= $total_data ?> data)
+        </small>
 
-</div>
+        <nav aria-label="Pagination riwayat pelanggaran">
 
+            <ul class="pagination pagination-sm mb-0">
 
-<!-- PAGINATION DI SISI KANAN -->
+                <li class="page-item <?= ($halaman <= 1) ? 'disabled' : '' ?>">
 
-<div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3">
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=riwayat&halaman_riwayat=<?= max(1, $halaman - 1) ?>"
+                    >
+                        &laquo;
+                    </a>
 
-    <small class="text-muted">
-        Halaman <?= $halaman ?>
-        dari <?= $total_halaman ?>
-        (<?= $total_data ?> data)
-    </small>
+                </li>
 
-    <nav aria-label="Pagination riwayat pelanggaran">
+                <?php
 
-        <ul class="pagination pagination-sm mb-0">
+                $mulai = max(1, $halaman - 2);
+                $akhir = min($total_halaman, $halaman + 2);
 
-            <!-- Tombol Sebelumnya -->
+                for ($i = $mulai; $i <= $akhir; $i++):
 
-            <li class="page-item <?= ($halaman <= 1) ? 'disabled' : '' ?>">
+                ?>
 
-                <a
-                    class="page-link"
-                    href="dashboard.php?page=riwayat&halaman_riwayat=<?= max(1, $halaman - 1) ?>"
-                >
-                    &laquo;
-                </a>
+                    <li class="page-item <?= ($i == $halaman) ? 'active' : '' ?>">
 
-            </li>
+                        <a
+                            class="page-link"
+                            href="dashboard.php?page=riwayat&halaman_riwayat=<?= $i ?>"
+                        >
+                            <?= $i ?>
+                        </a>
 
-            <!-- Nomor Halaman -->
+                    </li>
 
-            <?php
+                <?php endfor; ?>
 
-            $mulai = max(1, $halaman - 2);
-            $akhir = min($total_halaman, $halaman + 2);
+                <li class="page-item <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>">
 
-            for ($i = $mulai; $i <= $akhir; $i++):
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=riwayat&halaman_riwayat=<?= min($total_halaman, $halaman + 1) ?>"
+                    >
+                        &raquo;
+                    </a>
 
-            ?>
+                </li>
 
-            <li class="page-item <?= ($i == $halaman) ? 'active' : '' ?>">
+            </ul>
 
-                <a
-                    class="page-link"
-                    href="dashboard.php?page=riwayat&halaman_riwayat=<?= $i ?>"
-                >
-                    <?= $i ?>
-                </a>
+        </nav>
 
-            </li>
-
-            <?php endfor; ?>
-
-            <!-- Tombol Berikutnya -->
-
-            <li class="page-item <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>">
-
-                <a
-                    class="page-link"
-                    href="dashboard.php?page=riwayat&halaman_riwayat=<?= min($total_halaman, $halaman + 1) ?>"
-                >
-                    &raquo;
-                </a>
-
-            </li>
-
-        </ul>
-
-    </nav>
-
-</div>
+    </div>
 
 </div>
