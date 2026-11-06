@@ -1,5 +1,5 @@
 
-<?php /* Halaman rekap_poin; dipanggil melalui dashboard.php */ ?>
+<?php /* Halaman rekap poin; dipanggil melalui dashboard.php */ ?>
 
 <div class="table-box">
 
@@ -11,9 +11,9 @@
     $role = strtolower(trim($_SESSION['role'] ?? ''));
 
     /*
-       ADMIN: semua kelas.
-       WALI KELAS/GURU: hanya kelas yang diampu.
-       Pencocokan guru menggunakan email akun login.
+       ADMIN : Melihat seluruh rekap poin siswa.
+       GURU  : Melihat rekap poin dari pelanggaran
+               yang dicatat oleh dirinya sendiri.
     */
 
     $filter_sql = "";
@@ -23,27 +23,15 @@
         $filter_sql = "
             WHERE EXISTS (
                 SELECT 1
-                FROM t_users u
-                INNER JOIN t_guru g
-                    ON LOWER(TRIM(g.email)) = LOWER(TRIM(u.email))
-                INNER JOIN t_wali_kelas wk
-                    ON wk.guru_id = g.id
-                WHERE u.id = $user_id
-                    AND wk.kelas_id = ps.kelas_id
-                    AND wk.status_aktif = 1
-                    AND wk.tanggal_mulai <= CURDATE()
-                    AND (
-                        wk.tanggal_selesai IS NULL
-                        OR wk.tanggal_selesai >= CURDATE()
-                    )
+                FROM t_guru g
+                WHERE g.user_id = $user_id
+                  AND g.id = ps.guru_id
             )
         ";
 
     }
 
-    /* =========================
-       PAGINATION 10 DATA
-       ========================= */
+    /* PAGINATION */
 
     $batas = 10;
 
@@ -55,15 +43,17 @@
 
     $total_query = mysqli_query($koneksi, "
         SELECT COUNT(DISTINCT ps.siswa_id) AS total
+
         FROM t_pelanggaran_siswa ps
-        INNER JOIN t_siswa s
-            ON s.id = ps.siswa_id
+
         $filter_sql
     ");
 
-    $total_data = $total_query
-        ? (int) mysqli_fetch_assoc($total_query)['total']
-        : 0;
+    if (!$total_query) {
+        die("Query hitung rekap gagal: " . mysqli_error($koneksi));
+    }
+
+    $total_data = (int) mysqli_fetch_assoc($total_query)['total'];
 
     $total_halaman = max(
         1,
@@ -79,28 +69,34 @@
     /* AMBIL REKAP POIN */
 
     $q = mysqli_query($koneksi, "
+
         SELECT
+
             ps.siswa_id,
-            s.nama AS nama_siswa,
+
+            ps.nama_siswa,
+
             SUM(ps.poin) AS total_poin
 
         FROM t_pelanggaran_siswa ps
-
-        INNER JOIN t_siswa s
-            ON s.id = ps.siswa_id
 
         $filter_sql
 
         GROUP BY
             ps.siswa_id,
-            s.nama
+            ps.nama_siswa
 
         ORDER BY
             total_poin DESC,
-            s.nama ASC
+            ps.nama_siswa ASC
 
         LIMIT $posisi, $batas
+
     ");
+
+    if (!$q) {
+        die("Query rekap poin gagal: " . mysqli_error($koneksi));
+    }
 
     ?>
 
@@ -109,31 +105,39 @@
         <table class="table table-bordered">
 
             <thead>
+
                 <tr>
                     <th>No</th>
                     <th>Siswa</th>
                     <th>Total Poin</th>
                 </tr>
+
             </thead>
 
             <tbody>
 
-            <?php if ($q && mysqli_num_rows($q) > 0): ?>
+            <?php if (mysqli_num_rows($q) > 0): ?>
 
                 <?php while ($r = mysqli_fetch_assoc($q)): ?>
 
                     <tr>
-                        <td><?= $no++ ?></td>
+
+                        <td>
+                            <?= $no++ ?>
+                        </td>
 
                         <td>
                             <?= e($r['nama_siswa']) ?>
                         </td>
 
                         <td>
+
                             <span class="badge bg-primary">
                                 <?= e($r['total_poin']) ?> poin
                             </span>
+
                         </td>
+
                     </tr>
 
                 <?php endwhile; ?>
@@ -141,9 +145,11 @@
             <?php else: ?>
 
                 <tr>
+
                     <td colspan="3" class="text-center text-muted">
                         Belum ada data rekap poin siswa.
                     </td>
+
                 </tr>
 
             <?php endif; ?>
@@ -159,9 +165,11 @@
     <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3">
 
         <small class="text-muted">
+
             Halaman <?= $halaman ?>
             dari <?= $total_halaman ?>
             (<?= $total_data ?> data)
+
         </small>
 
         <nav aria-label="Pagination rekap poin">

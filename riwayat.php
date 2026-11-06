@@ -12,26 +12,62 @@
 
     $filter_sql = "";
 
-    if ($role !== 'admin') {
+    /*
+       ADMIN      : Melihat semua riwayat.
+       GURU       : Melihat pelanggaran yang dicatat sendiri.
+       WALI KELAS : Melihat semua pelanggaran di kelasnya.
+    */
+
+    // ADMIN
+    if ($role === 'admin') {
+
+        $filter_sql = "";
+
+    }
+
+    // GURU
+    elseif ($role === 'guru') {
+
+        $filter_sql = "
+            WHERE EXISTS (
+                SELECT 1
+                FROM t_guru g
+                WHERE g.user_id = $user_id
+                  AND g.id = ps.guru_id
+            )
+        ";
+
+    }
+
+    // WALI KELAS
+    elseif ($role === 'wali_kelas') {
 
         $filter_sql = "
             WHERE EXISTS (
                 SELECT 1
                 FROM t_users u
+
                 INNER JOIN t_guru g
                     ON LOWER(TRIM(g.email)) = LOWER(TRIM(u.email))
+
                 INNER JOIN t_wali_kelas wk
                     ON wk.guru_id = g.id
+
                 WHERE u.id = $user_id
-                    AND wk.kelas_id = ps.kelas_id
-                    AND wk.status_aktif = 1
-                    AND wk.tanggal_mulai <= CURDATE()
-                    AND (
-                        wk.tanggal_selesai IS NULL
-                        OR wk.tanggal_selesai >= CURDATE()
-                    )
+                  AND wk.kelas_id = ps.kelas_id
+                  AND wk.status_aktif = 'Aktif'
+                  AND wk.tanggal_mulai <= CURDATE()
+                  AND (
+                      wk.tanggal_selesai IS NULL
+                      OR wk.tanggal_selesai = '0000-00-00'
+                      OR wk.tanggal_selesai >= CURDATE()
+                  )
             )
         ";
+
+    } else {
+
+        $filter_sql = " WHERE 1 = 0 ";
 
     }
 
@@ -51,9 +87,11 @@
         $filter_sql
     ");
 
-    $total_data = $total_query
-        ? (int) mysqli_fetch_assoc($total_query)['total']
-        : 0;
+    if (!$total_query) {
+        die("Query hitung riwayat gagal: " . mysqli_error($koneksi));
+    }
+
+    $total_data = (int) mysqli_fetch_assoc($total_query)['total'];
 
     $total_halaman = max(
         1,
@@ -69,12 +107,30 @@
     /* AMBIL DATA RIWAYAT */
 
     $q = mysqli_query($koneksi, "
-        SELECT ps.*
+        SELECT
+            ps.id,
+            ps.tanggal,
+            ps.nama_siswa,
+            ps.nama_kelas,
+            ps.nama_pelanggaran,
+            ps.poin,
+            ps.tindakan,
+            ps.status
+
         FROM t_pelanggaran_siswa ps
+
         $filter_sql
-        ORDER BY ps.tanggal DESC, ps.id DESC
+
+        ORDER BY
+            ps.tanggal DESC,
+            ps.id DESC
+
         LIMIT $posisi, $batas
     ");
+
+    if (!$q) {
+        die("Query riwayat gagal: " . mysqli_error($koneksi));
+    }
 
     ?>
 
@@ -97,19 +153,28 @@
 
             <tbody>
 
-            <?php if ($q && mysqli_num_rows($q) > 0): ?>
+            <?php if (mysqli_num_rows($q) > 0): ?>
 
                 <?php while ($r = mysqli_fetch_assoc($q)): ?>
 
                     <tr>
+
                         <td><?= $no++ ?></td>
+
                         <td><?= e($r['tanggal']) ?></td>
+
                         <td><?= e($r['nama_siswa']) ?></td>
+
                         <td><?= e($r['nama_kelas']) ?></td>
+
                         <td><?= e($r['nama_pelanggaran']) ?></td>
+
                         <td><?= e($r['poin']) ?></td>
+
                         <td><?= e($r['tindakan']) ?></td>
+
                         <td><?= e($r['status']) ?></td>
+
                     </tr>
 
                 <?php endwhile; ?>
@@ -118,7 +183,7 @@
 
                 <tr>
                     <td colspan="8" class="text-center text-muted">
-                        Belum ada riwayat pelanggaran untuk kelas yang diampu.
+                        Belum ada riwayat pelanggaran.
                     </td>
                 </tr>
 
@@ -135,9 +200,11 @@
     <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3">
 
         <small class="text-muted">
+
             Halaman <?= $halaman ?>
             dari <?= $total_halaman ?>
             (<?= $total_data ?> data)
+
         </small>
 
         <nav aria-label="Pagination riwayat pelanggaran">
