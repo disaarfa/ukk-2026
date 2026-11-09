@@ -1,5 +1,68 @@
+<?php
+/* =====================================================
+   HALAMAN LAPORAN PELANGGARAN
+   Dipanggil melalui dashboard.php
+   ===================================================== */
 
-<?php /* Halaman laporan; dipanggil melalui dashboard.php */ ?>
+// Ambil session login
+$user_id = (int)($_SESSION['user_id'] ?? 0);
+$role = strtolower(trim($_SESSION['role'] ?? ''));
+
+// Samakan format role
+$role = str_replace([' ', '-'], '_', $role);
+
+/* =====================================================
+   FILTER BERDASARKAN ROLE
+   ===================================================== */
+
+$filter_sql = "";
+
+if ($role === 'admin') {
+
+    // Admin melihat semua laporan
+    $filter_sql = "";
+
+} elseif ($role === 'guru') {
+
+    // Guru hanya melihat pelanggaran yang dicatat sendiri
+    $filter_sql = "
+        WHERE EXISTS (
+            SELECT 1
+            FROM t_guru g
+            WHERE g.user_id = $user_id
+              AND g.id = ps.guru_id
+        )
+    ";
+
+} elseif ($role === 'wali_kelas') {
+
+    // Wali kelas hanya melihat laporan kelasnya sendiri
+    $filter_sql = "
+        WHERE EXISTS (
+            SELECT 1
+            FROM t_wali_kelas wk
+
+            INNER JOIN t_guru g
+                ON g.id = wk.guru_id
+
+            WHERE g.user_id = $user_id
+              AND wk.kelas_id = ps.kelas_id
+              AND wk.status_aktif = 1
+              AND wk.tanggal_mulai <= CURDATE()
+              AND wk.tanggal_selesai >= CURDATE()
+        )
+    ";
+
+} else {
+
+    $filter_sql = " WHERE 1 = 0 ";
+
+}
+?>
+
+<!-- =====================================================
+     JUDUL LAPORAN
+     ===================================================== -->
 
 <div class="dashboard-card">
 
@@ -11,26 +74,39 @@
     </p>
 
     <!-- TOMBOL CETAK DAN EXPORT -->
+
     <div class="d-flex flex-wrap gap-2 mb-3 no-print">
 
-        <button type="button"
-                class="btn btn-primary"
-                onclick="window.print()">
-            <i class="bi bi-printer"></i> Cetak Laporan
+        <button
+            type="button"
+            class="btn btn-primary"
+            onclick="window.print()"
+        >
+            <i class="bi bi-printer"></i>
+            Cetak Laporan
         </button>
 
-        <a href="dashboard.php?page=laporan&export=csv"
-           class="btn btn-success">
-            <i class="bi bi-file-earmark-excel"></i> Export Excel/CSV
+        <a
+            href="dashboard.php?page=laporan&export=csv"
+            class="btn btn-success"
+        >
+            <i class="bi bi-file-earmark-excel"></i>
+            Export Excel/CSV
         </a>
 
     </div>
 
 </div>
 
+<!-- =====================================================
+     TABEL LAPORAN
+     ===================================================== -->
+
 <div class="table-box" id="area-laporan">
 
-    <h4 class="judul-cetak">Laporan Pelanggaran Siswa</h4>
+    <h4 class="judul-cetak">
+        Laporan Pelanggaran Siswa
+    </h4>
 
     <div class="table-responsive">
 
@@ -59,41 +135,66 @@
             $batas = 10;
 
             $halaman = isset($_GET['halaman_laporan'])
-                ? max(1, (int) $_GET['halaman_laporan'])
+                ? max(1, (int)$_GET['halaman_laporan'])
                 : 1;
 
-            /* HITUNG TOTAL DATA */
+
+            /* =========================
+               HITUNG TOTAL DATA
+               SESUAI ROLE
+               ========================= */
 
             $total_query = mysqli_query($koneksi, "
+
                 SELECT COUNT(*) AS total
-                FROM t_pelanggaran_siswa
+
+                FROM t_pelanggaran_siswa ps
+
+                $filter_sql
+
             ");
 
-            $total_data = $total_query
-                ? (int) mysqli_fetch_assoc($total_query)['total']
-                : 0;
+            if (!$total_query) {
+                die(
+                    "Query hitung laporan gagal: "
+                    . mysqli_error($koneksi)
+                );
+            }
+
+            $total_data = (int)mysqli_fetch_assoc(
+                $total_query
+            )['total'];
+
 
             $total_halaman = max(
                 1,
-                (int) ceil($total_data / $batas)
+                (int)ceil($total_data / $batas)
             );
 
-            /* VALIDASI HALAMAN */
 
-            $halaman = min($halaman, $total_halaman);
+            /* =========================
+               VALIDASI HALAMAN
+               ========================= */
+
+            $halaman = min(
+                $halaman,
+                $total_halaman
+            );
 
             $posisi = ($halaman - 1) * $batas;
 
             $no = $posisi + 1;
 
+
             /* =========================
                AMBIL DATA LAPORAN
-               NAMA DARI TABEL T_SISWA
+               SESUAI ROLE
                ========================= */
 
             $q = mysqli_query($koneksi, "
 
                 SELECT
+
                     ps.*,
 
                     COALESCE(
@@ -106,6 +207,8 @@
                 LEFT JOIN t_siswa s
                     ON s.id = ps.siswa_id
 
+                $filter_sql
+
                 ORDER BY
                     ps.tanggal DESC,
                     ps.id DESC
@@ -114,7 +217,19 @@
 
             ");
 
-            if ($q && mysqli_num_rows($q) > 0):
+            if (!$q) {
+                die(
+                    "Query laporan gagal: "
+                    . mysqli_error($koneksi)
+                );
+            }
+
+
+            /* =========================
+               TAMPILKAN DATA
+               ========================= */
+
+            if (mysqli_num_rows($q) > 0):
 
                 while ($r = mysqli_fetch_assoc($q)):
 
@@ -122,7 +237,9 @@
 
                 <tr>
 
-                    <td><?= $no++ ?></td>
+                    <td>
+                        <?= $no++ ?>
+                    </td>
 
                     <td>
                         <?= e($r['nama_tampil']) ?>
@@ -159,9 +276,11 @@
             ?>
 
                 <tr>
+
                     <td colspan="7" class="text-center text-muted">
                         Belum ada data pelanggaran siswa.
                     </td>
+
                 </tr>
 
             <?php endif; ?>
@@ -172,14 +291,21 @@
 
     </div>
 
-    <!-- PAGINATION DI SISI KANAN -->
+
+    <!-- =================================================
+         PAGINATION DI SISI KANAN
+         ================================================= -->
 
     <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3 no-print">
 
         <small class="text-muted">
+
             Halaman <?= $halaman ?>
+
             dari <?= $total_halaman ?>
+
             (<?= $total_data ?> data)
+
         </small>
 
         <nav aria-label="Pagination laporan">
@@ -190,41 +316,57 @@
 
                 <li class="page-item <?= ($halaman <= 1) ? 'disabled' : '' ?>">
 
-                    <a class="page-link"
-                       href="dashboard.php?page=laporan&halaman_laporan=<?= max(1, $halaman - 1) ?>">
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=laporan&halaman_laporan=<?= max(1, $halaman - 1) ?>"
+                    >
                         &laquo;
                     </a>
 
                 </li>
+
 
                 <!-- NOMOR HALAMAN -->
 
                 <?php
 
                 $mulai = max(1, $halaman - 2);
-                $akhir = min($total_halaman, $halaman + 2);
 
-                for ($i = $mulai; $i <= $akhir; $i++):
+                $akhir = min(
+                    $total_halaman,
+                    $halaman + 2
+                );
+
+                for (
+                    $i = $mulai;
+                    $i <= $akhir;
+                    $i++
+                ):
 
                 ?>
 
-                <li class="page-item <?= ($i == $halaman) ? 'active' : '' ?>">
+                    <li class="page-item <?= ($i == $halaman) ? 'active' : '' ?>">
 
-                    <a class="page-link"
-                       href="dashboard.php?page=laporan&halaman_laporan=<?= $i ?>">
-                        <?= $i ?>
-                    </a>
+                        <a
+                            class="page-link"
+                            href="dashboard.php?page=laporan&halaman_laporan=<?= $i ?>"
+                        >
+                            <?= $i ?>
+                        </a>
 
-                </li>
+                    </li>
 
                 <?php endfor; ?>
+
 
                 <!-- BERIKUTNYA -->
 
                 <li class="page-item <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>">
 
-                    <a class="page-link"
-                       href="dashboard.php?page=laporan&halaman_laporan=<?= min($total_halaman, $halaman + 1) ?>">
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=laporan&halaman_laporan=<?= min($total_halaman, $halaman + 1) ?>"
+                    >
                         &raquo;
                     </a>
 
@@ -237,6 +379,11 @@
     </div>
 
 </div>
+
+
+<!-- =====================================================
+     STYLE CETAK
+     ===================================================== -->
 
 <style>
 
