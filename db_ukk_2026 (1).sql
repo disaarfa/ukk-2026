@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 07 Nov 2026 pada 06.50
--- Versi server: 10.4.32-MariaDB
--- Versi PHP: 8.2.12
+-- Waktu pembuatan: 09 Nov 2026 pada 11.13
+-- Versi server: 10.4.27-MariaDB
+-- Versi PHP: 8.2.0
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -120,8 +120,15 @@ CREATE TABLE `t_kelas` (
 --
 
 INSERT INTO `t_kelas` (`id`, `nama`, `tingkat`, `jurusan`, `status_aktif`, `created_at`, `updated_at`) VALUES
-(1, 'XII RPL 1', 'XII', 'RPL', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
-(2, 'XII RPL 2', 'XII', 'RPL', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00');
+(1, 'XII RPL 1', 'XII', 'Rekayasa Perangkat Lunak', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
+(2, 'XII RPL 2', 'XII', 'Rekayasa Perangkat Lunak', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
+(3, 'XII BD 1', 'XII', 'Bisnis Digital', 1, '2026-11-09 09:26:38', '2026-11-09 09:26:38'),
+(4, 'XII TKJ 1', 'XII', 'Teknik Komputer dan Jaringan', 1, '2026-11-09 09:26:38', '2026-11-09 09:26:38'),
+(5, 'XII TKJ 2', 'XII', 'Teknik Komputer dan Jaringan', 1, '2026-11-09 09:26:38', '2026-11-09 09:26:38'),
+(6, 'XII TKR 3', 'XII', 'Teknik Kendaraan Ringan', 1, '2026-11-09 09:26:38', '2026-11-09 09:26:38'),
+(7, 'XII TKR 4', 'XII', 'Teknik Kendaraan Ringan', 1, '2026-11-09 09:26:38', '2026-11-09 09:26:38'),
+(8, 'XII TSM 1', 'XII', 'Teknik Sepeda Motor', 1, '2026-11-09 09:26:38', '2026-11-09 09:26:38'),
+(9, 'XII TSM 3', 'XII', 'Teknik Sepeda Motor', 1, '2026-11-09 09:26:38', '2026-11-09 09:26:38');
 
 -- --------------------------------------------------------
 
@@ -154,7 +161,6 @@ INSERT INTO `t_kelas_siswa` (`id`, `siswa_id`, `tahun_ajaran_id`, `kelas_id`, `t
 (6, 6, 2, 1, '2026-07-01', '2027-06-30', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (7, 7, 2, 1, '2026-07-01', '2027-06-30', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (8, 8, 2, 1, '2026-07-01', '2027-06-30', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
-(9, 9, 2, 1, '2026-07-01', '2027-06-30', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (10, 10, 2, 1, '2026-07-01', '2027-06-30', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (11, 11, 2, 1, '2026-07-01', '2027-06-30', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (12, 12, 2, 1, '2026-07-01', '2027-06-30', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
@@ -302,8 +308,7 @@ INSERT INTO `t_pelanggaran_siswa` (`id`, `tahun_ajaran_id`, `siswa_id`, `nama_si
 (8, 2, 27, 'Anisa Amirulla', 2, 'XII RPL 2', 8, 'Membuat gaduh di kelas', 4, 53, 'Riesy Putri Navia, S.Kom', '2026-09-09', 'Pencatatan pelanggaran siswa', 3, 'Teguran lisan', 'tercatat', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (9, 2, 34, 'Muhammad Adnan Syaeful Islami', 2, 'XII RPL 2', 8, 'Membuat gaduh di kelas', 4, 14, 'Drs. Muhamad Ali', '2026-09-09', 'Pencatatan pelanggaran siswa', 3, 'Teguran lisan', 'tercatat', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (10, 2, 38, 'Puspita Dewi', 2, 'XII RPL 2', 9, 'Membuang sampah sembarangan', 4, 55, 'Irvan Rizal, S.Pd', '2026-10-13', 'Pencatatan pelanggaran siswa', 2, 'Teguran lisan', 'tercatat', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
-(11, 2, 36, 'Nadia Zulfa Soraya', 2, 'XII RPL 2', 5, 'Rambut tidak sesuai aturan', 2, 15, 'Helmi Ali Akbar, S.Pd.I', '2026-10-02', 'Pencatatan pelanggaran siswa', 5, 'Pembinaan oleh wali kelas', 'tercatat', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
-(12, 2, 9, 'Ilma Najya', 1, 'XII RPL 1', 7, 'Tidak masuk tanpa keterangan', 3, 6, 'Uca Musa Yusenda, S.Pd', '2026-10-24', 'Pencatatan pelanggaran siswa', 10, 'Pemanggilan siswa', 'diproses', '2026-07-01 01:00:00', '2026-07-01 01:00:00');
+(11, 2, 36, 'Nadia Zulfa Soraya', 2, 'XII RPL 2', 5, 'Rambut tidak sesuai aturan', 2, 15, 'Helmi Ali Akbar, S.Pd.I', '2026-10-02', 'Pencatatan pelanggaran siswa', 5, 'Pembinaan oleh wali kelas', 'Selesai', '2026-07-01 01:00:00', '2026-11-09 10:01:54');
 
 -- --------------------------------------------------------
 
@@ -337,7 +342,6 @@ INSERT INTO `t_siswa` (`id`, `nis`, `nisn`, `nama`, `jenis_kelamin`, `tanggal_la
 (6, '102410525', '0024065539', 'Azril Akbar Fawji Abdillah', 'L', '2009-03-21', 'Jl. Tamansari No. 12, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (7, '102410527', '0035597600', 'Erlangga Saputra Hidayat', 'L', '2008-11-28', 'Jl. Ir. H. Juanda No. 105, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (8, '102410528', '0088297510', 'Hilma Humma Tunnajah', 'P', '2009-11-17', 'Jl. Siliwangi No. 8, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
-(9, '102410529', '0029774682', 'Ilma Najya', 'P', '2008-11-08', 'Jl. Cihideung No. 8, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (10, '102410531', '0048309143', 'Julianda Dharma Pangestu', 'L', '2008-12-28', 'Jl. Rumah Sakit Umum No. 91, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (11, '102410532', '0026974998', 'Kayila Nur Fadilah', 'P', '2008-09-27', 'Jl. RE Martadinata No. 44, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (12, '102410533', '0063627612', 'Moza Dina Nabillah', 'P', '2009-06-15', 'Jl. Cihideung No. 71, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
@@ -378,7 +382,8 @@ INSERT INTO `t_siswa` (`id`, `nis`, `nisn`, `nama`, `jenis_kelamin`, `tanggal_la
 (47, '102410565', '0002387473', 'Sherly Satriani', 'P', '2008-11-28', 'Jl. RE Martadinata No. 42, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (48, '102410566', '0084579966', 'Sofi Nurjanah', 'P', '2008-08-17', 'Jl. RE Martadinata No. 80, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (49, '102410567', '0001529160', 'Suraiya Salsabila Azzahra', 'P', '2009-02-18', 'Jl. Dr. Soekardjo No. 69, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
-(50, '102410568', '0027698636', 'Toni Antonio', 'L', '2008-03-11', 'Jl. Dr. Soekardjo No. 60, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00');
+(50, '102410568', '0027698636', 'Toni Antonio', 'L', '2008-03-11', 'Jl. Dr. Soekardjo No. 60, Tasikmalaya', 1, '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
+(51, '1024565078', '0002821903', 'Ilma Najiya', 'P', '2008-11-08', 'Jl. Siliwangi No. 54, Tasikmalaya', 1, '2026-11-09 07:49:34', '2026-11-09 07:49:34');
 
 -- --------------------------------------------------------
 
@@ -454,11 +459,11 @@ INSERT INTO `t_users` (`id`, `name`, `email`, `email_verified_at`, `password`, `
 (26, 'Asep Taufiq Hidayat, S.Kom', 'asep.taufiq.hidayat@gmail.com', '2026-07-01 01:00:00', '$2y$10$hiAiku1HsEQIoaQSL.hrS.8ak0s627F/xPy2BmabtCAgoG8B1TeSW', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (27, 'Rendy Ichsan Kusumah, S.T', 'rendy.ichsan.kusumah@gmail.com', '2026-07-01 01:00:00', '$2y$10$5aXHldE5en25tpLydtxWIuyLk1ykGY20dGsH8CRgp9sP1O521BXwm', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (28, 'Feri Rahmawan, S.Pd', 'feri.rahmawan@gmail.com', '2026-07-01 01:00:00', '$2y$10$GDHMEsw6CfsK3HmdPFqRc./5NhF3kEP7/vUugS8KtphDe.xtiprd.', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
-(29, 'Ari Sandriana, S.Kom', 'ari.sandriana@gmail.com', '2026-07-01 01:00:00', '$2y$10$VOJrFSaKaO362QpCPfp.8OriZqROFqBlM6gAIJIfzmfUSMd7.2.82', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
+(29, 'Ari Sandriana, S.Kom', 'ari.sandriana@gmail.com', '2026-07-01 01:00:00', '$2y$10$VOJrFSaKaO362QpCPfp.8OriZqROFqBlM6gAIJIfzmfUSMd7.2.82', '', 'wali_kelas', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (30, 'Yaneu Nurdian, S.Pd, M.Pd', 'yaneu.nurdian@gmail.com', '2026-07-01 01:00:00', '$2y$10$qKUZY.AXn6YdBIDoHhu5MOa0SAzZRBnisf/C8FBH2Fwh/C/w44k1.', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (31, 'Ucu Muhammad Khoer N, S.Pd', 'ucu.muhammad.khoer.n@gmail.com', '2026-07-01 01:00:00', '$2y$10$zOttnIFqO1udS6FteaUeKOwePcsQnmp.sPAqJr2EOhS7bK2GkJ/Va', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (32, 'Mira Dwi Rahmawati, S.Ag', 'mira.dwi.rahmawati@gmail.com', '2026-07-01 01:00:00', '$2y$10$6wXPcYBw7oXKicyhBSHNbudR9jefifulcNB/ZfBWHxQTNdy3bAv/G', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
-(33, 'Aldi Maulana, S.Pd', 'aldi.maulana@gmail.com', '2026-07-01 01:00:00', '$2y$10$Nf2amdGR/rcxbf0jaT5lb.SDoZL9tMT6hkDm88mSgq1iktvY.5dWi', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
+(33, 'Aldi Maulana, S.Pd', 'aldi.maulana@gmail.com', '2026-07-01 01:00:00', '$2y$10$Nf2amdGR/rcxbf0jaT5lb.SDoZL9tMT6hkDm88mSgq1iktvY.5dWi', '', 'wali_kelas', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (34, 'Eli Rosliah, S.Pd', 'eli.rosliah@gmail.com', '2026-07-01 01:00:00', '$2y$10$T8hlWD5T5FiQWOuETNFLMuHZqbKDd2VffUhHnwZJt9ihqRWOSH8we', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (35, 'Isni Nur Fitriani, S.Pd', 'isni.nur.fitriani@gmail.com', '2026-07-01 01:00:00', '$2y$10$5Cb/mGWpKx3nK56fkLoj0uumvE/RKx9QjzE1HDO1ai/ms1YQLihgK', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
 (36, 'Aanisah Putri Nur Aini, S.Pd', 'aanisah.putri.nur.aini@gmail.com', '2026-07-01 01:00:00', '$2y$10$tK01jgkVWCKL8FP5POY5He0s/m31Rd9a9szjaYJoIvwkmd8et57Pa', '', 'guru', '2026-07-01 01:00:00', '2026-07-01 01:00:00'),
@@ -603,7 +608,7 @@ ALTER TABLE `t_guru`
 -- AUTO_INCREMENT untuk tabel `t_kelas`
 --
 ALTER TABLE `t_kelas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT untuk tabel `t_kelas_siswa`
@@ -633,7 +638,7 @@ ALTER TABLE `t_pelanggaran_siswa`
 -- AUTO_INCREMENT untuk tabel `t_siswa`
 --
 ALTER TABLE `t_siswa`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT untuk tabel `t_tahun_ajaran`
