@@ -83,11 +83,11 @@ if ($role === 'admin') {
         </button>
 
         <a
-            href="dashboard.php?page=laporan&export=csv"
+            href="dashboard.php?page=laporan&export=xls"
             class="btn btn-success"
         >
             <i class="bi bi-file-earmark-excel"></i>
-            Export Excel/CSV
+            Export Excel
         </a>
 
     </div>
@@ -255,8 +255,6 @@ if ($role === 'admin') {
                     <td>
                         <?= e($r['tanggal']) ?>
                     </td>
-
-                    <!-- GURU YANG MENCATAT PELANGGARAN -->
 
                     <td>
                         <?= e($r['guru_pencatat']) ?>

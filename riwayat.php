@@ -1,29 +1,56 @@
 
 <?php
-/* HALAMAN RIWAYAT PELANGGARAN */
+/* =========================
+   HALAMAN RIWAYAT PELANGGARAN
+   ========================= */
 
 $user_id = (int) ($_SESSION['user_id'] ?? 0);
 $role = strtolower(trim($_SESSION['role'] ?? ''));
 
-/* FILTER BERDASARKAN ROLE */
+/* =========================
+   FILTER BERDASARKAN ROLE
+   ========================= */
 
-$filter_sql = "";
+if ($role === 'admin') {
 
-if ($role === 'admin' || $role === 'guru') {
+    // ADMIN MELIHAT SEMUA DATA SELESAI
 
-    // Admin dan guru melihat seluruh riwayat
-    $filter_sql = "";
+    $filter_sql = "
+        WHERE ps.status = 'Selesai'
+    ";
+
+} elseif ($role === 'guru') {
+
+    // GURU HANYA MELIHAT DATA
+    // YANG DICATAT OLEH DIRINYA SENDIRI
+
+    $filter_sql = "
+        WHERE ps.status = 'Selesai'
+        AND EXISTS (
+            SELECT 1
+            FROM t_guru g
+            WHERE g.user_id = $user_id
+              AND TRIM(SUBSTRING_INDEX(g.nama, ',', 1))
+                  = TRIM(ps.nama_guru)
+        )
+    ";
 
 } elseif ($role === 'wali_kelas') {
 
+    // WALI KELAS HANYA MELIHAT DATA
+    // YANG DICATAT OLEH DIRINYA SENDIRI
+    // BAIK DI XII RPL 1 MAUPUN XII RPL 2
+
     $filter_sql = "
-        WHERE EXISTS (
+        WHERE ps.status = 'Selesai'
+        AND EXISTS (
             SELECT 1
             FROM t_wali_kelas wk
             INNER JOIN t_guru g
                 ON g.id = wk.guru_id
             WHERE g.user_id = $user_id
-              AND wk.kelas_id = ps.kelas_id
+              AND TRIM(SUBSTRING_INDEX(g.nama, ',', 1))
+                  = TRIM(ps.nama_guru)
               AND wk.status_aktif = 1
               AND wk.tanggal_mulai <= CURDATE()
               AND (
@@ -68,6 +95,7 @@ $total_halaman = max(1, (int) ceil($total_data / $batas));
 $halaman = min($halaman, $total_halaman);
 
 $posisi = ($halaman - 1) * $batas;
+
 $no = $posisi + 1;
 
 /* =========================
@@ -97,6 +125,7 @@ if (!$q) {
 ?>
 
 <style>
+
 /* WARNA TABEL RIWAYAT */
 
 .table-riwayat {
@@ -125,6 +154,7 @@ if (!$q) {
     border: 1px solid #dee2e6 !important;
     padding: 8px;
 }
+
 </style>
 
 <div class="table-box">
@@ -136,6 +166,7 @@ if (!$q) {
         <table class="table table-bordered table-riwayat">
 
             <thead>
+
                 <tr>
                     <th>No</th>
                     <th>Tanggal</th>
@@ -147,6 +178,7 @@ if (!$q) {
                     <th>Tindakan</th>
                     <th>Status</th>
                 </tr>
+
             </thead>
 
             <tbody>
@@ -159,23 +191,37 @@ if (!$q) {
 
                             <td><?= $no++ ?></td>
 
-                            <td><?= e($r['tanggal']) ?></td>
+                            <td>
+                                <?= e($r['tanggal']) ?>
+                            </td>
 
-                            <td><?= e($r['nama_siswa']) ?></td>
+                            <td>
+                                <?= e($r['nama_siswa']) ?>
+                            </td>
 
                             <td>
                                 <?= e($r['nama_guru'] ?: '-') ?>
                             </td>
 
-                            <td><?= e($r['nama_kelas']) ?></td>
+                            <td>
+                                <?= e($r['nama_kelas']) ?>
+                            </td>
 
-                            <td><?= e($r['nama_pelanggaran']) ?></td>
+                            <td>
+                                <?= e($r['nama_pelanggaran']) ?>
+                            </td>
 
-                            <td><?= e($r['poin']) ?></td>
+                            <td>
+                                <?= e($r['poin']) ?>
+                            </td>
 
-                            <td><?= e($r['tindakan']) ?></td>
+                            <td>
+                                <?= e($r['tindakan']) ?>
+                            </td>
 
-                            <td><?= e($r['status']) ?></td>
+                            <td>
+                                <?= e($r['status']) ?>
+                            </td>
 
                         </tr>
 
@@ -207,39 +253,55 @@ if (!$q) {
         </small>
 
         <nav>
+
             <ul class="pagination pagination-sm mb-0">
 
                 <li class="page-item <?= ($halaman <= 1) ? 'disabled' : '' ?>">
-                    <a class="page-link"
-                       href="dashboard.php?page=riwayat&halaman_riwayat=<?= max(1, $halaman - 1) ?>">
+
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=riwayat&halaman_riwayat=<?= max(1, $halaman - 1) ?>"
+                    >
                         &laquo;
                     </a>
+
                 </li>
 
                 <?php
+
                 $mulai = max(1, $halaman - 2);
                 $akhir = min($total_halaman, $halaman + 2);
 
                 for ($i = $mulai; $i <= $akhir; $i++):
+
                 ?>
 
                     <li class="page-item <?= ($i == $halaman) ? 'active' : '' ?>">
-                        <a class="page-link"
-                           href="dashboard.php?page=riwayat&halaman_riwayat=<?= $i ?>">
+
+                        <a
+                            class="page-link"
+                            href="dashboard.php?page=riwayat&halaman_riwayat=<?= $i ?>"
+                        >
                             <?= $i ?>
                         </a>
+
                     </li>
 
                 <?php endfor; ?>
 
                 <li class="page-item <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>">
-                    <a class="page-link"
-                       href="dashboard.php?page=riwayat&halaman_riwayat=<?= min($total_halaman, $halaman + 1) ?>">
+
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=riwayat&halaman_riwayat=<?= min($total_halaman, $halaman + 1) ?>"
+                    >
                         &raquo;
                     </a>
+
                 </li>
 
             </ul>
+
         </nav>
 
     </div>

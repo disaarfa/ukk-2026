@@ -5,6 +5,45 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
+/* =========================
+   PROSES SIMPAN TINDAKAN
+   ========================= */
+
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_GET['page'] ?? '') === 'tindakan' &&
+    isset($_POST['simpan_tindakan'])
+) {
+
+    $id = (int) ($_POST['id'] ?? 0);
+    $tindakan = trim($_POST['tindakan'] ?? '');
+    $status = $_POST['status'] ?? 'Pending';
+
+    $status_valid = ['Pending', 'Proses', 'Selesai'];
+
+    if ($id > 0 && in_array($status, $status_valid, true)) {
+
+        $stmt = mysqli_prepare($koneksi, "
+            UPDATE t_pelanggaran_siswa
+            SET tindakan = ?, status = ?
+            WHERE id = ?
+        ");
+
+        mysqli_stmt_bind_param(
+            $stmt,
+            "ssi",
+            $tindakan,
+            $status,
+            $id
+        );
+
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    }
+
+    header("Location: dashboard.php?page=tindakan");
+    exit;
+}
 
 /* =====================
    AMBIL DATA USER LOGIN
@@ -60,7 +99,6 @@ $menu_admin = [
 $menu_guru = [
     'catat_pelanggaran' => 'Catat Pelanggaran',
     'tindakan' => 'Tindakan',
-    'laporan' => 'Laporan',
     'riwayat' => 'Riwayat',
     'rekap_poin' => 'Rekap Poin'
 ];
@@ -102,53 +140,99 @@ if (!in_array($page, $allowed_pages, true)) {
     $page = 'dashboard';
 }
 /* =====================
-   EXPORT LAPORAN CSV
+   EXPORT LAPORAN EXCEL
    ===================== */
 
-if ($page === 'laporan' && ($_GET['export'] ?? '') === 'csv') {
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="laporan_pelanggaran_siswa.csv"');
+if ($page === 'laporan' && ($_GET['export'] ?? '') === 'xls') {
 
-    $output = fopen('php://output', 'w');
+    $user_id = (int)($_SESSION['user_id'] ?? 0);
+    $role = strtolower(trim($_SESSION['role'] ?? ''));
+    $role = str_replace([' ', '-'], '_', $role);
 
-    fwrite($output, "\xEF\xBB\xBF");
+    $filter_sql = "";
 
-    fputcsv($output, [
-        'No',
-        'Siswa',
-        'Kelas',
-        'Pelanggaran',
-        'Poin',
-        'Tanggal',
-        'Status'
-    ]);
+    if ($role === 'guru') {
 
-    $export_q = mysqli_query(
-        $koneksi,
-        "SELECT * FROM t_pelanggaran_siswa
-         ORDER BY tanggal DESC, id DESC"
-    );
+        $filter_sql = "
+            WHERE EXISTS (
+                SELECT 1
+                FROM t_guru g
+                WHERE g.user_id = $user_id
+                AND g.id = ps.guru_id
+            )
+        ";
 
-    $no_export = 1;
+    } elseif ($role === 'wali_kelas') {
 
-    if ($export_q) {
-        while ($row_export = mysqli_fetch_assoc($export_q)) {
-            fputcsv($output, [
-                $no_export++,
-                $row_export['nama_siswa'] ?? '',
-                $row_export['nama_kelas'] ?? '',
-                $row_export['nama_pelanggaran'] ?? '',
-                $row_export['poin'] ?? '',
-                $row_export['tanggal'] ?? '',
-                $row_export['status'] ?? ''
-            ]);
+        $filter_sql = "
+            WHERE EXISTS (
+                SELECT 1
+                FROM t_wali_kelas wk
+                INNER JOIN t_guru g ON g.id = wk.guru_id
+                WHERE g.user_id = $user_id
+                AND wk.kelas_id = ps.kelas_id
+                AND wk.status_aktif = 1
+                AND wk.tanggal_mulai <= CURDATE()
+                AND wk.tanggal_selesai >= CURDATE()
+            )
+        ";
+
+    } elseif ($role !== 'admin') {
+
+        $filter_sql = " WHERE 1 = 0 ";
+
+    }
+
+    header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+    header("Content-Disposition: attachment; filename=laporan_pelanggaran.xls");
+
+    echo "<table border='1'>";
+
+    echo "
+        <tr>
+            <th>No</th>
+            <th>Siswa</th>
+            <th>Kelas</th>
+            <th>Pelanggaran</th>
+            <th>Poin</th>
+            <th>Tanggal</th>
+            <th>Guru Pencatat</th>
+            <th>Status</th>
+        </tr>
+    ";
+
+    $query = mysqli_query($koneksi, "
+        SELECT
+            ps.*,
+            COALESCE(NULLIF(s.nama, ''), ps.nama_siswa) AS nama_tampil,
+            COALESCE(NULLIF(ps.nama_guru, ''), '-') AS guru_pencatat
+        FROM t_pelanggaran_siswa ps
+        LEFT JOIN t_siswa s ON s.id = ps.siswa_id
+        $filter_sql
+        ORDER BY ps.tanggal DESC, ps.id DESC
+    ");
+
+    $no = 1;
+
+    if ($query) {
+        while ($data = mysqli_fetch_assoc($query)) {
+
+            echo "<tr>";
+            echo "<td>" . $no++ . "</td>";
+            echo "<td>" . htmlspecialchars($data['nama_tampil'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($data['nama_kelas'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($data['nama_pelanggaran'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($data['poin'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($data['tanggal'] ?? '') . "</td>";
+            echo "<td>" . htmlspecialchars($data['guru_pencatat'] ?? '-') . "</td>";
+            echo "<td>" . htmlspecialchars($data['status'] ?? '') . "</td>";
+            echo "</tr>";
         }
     }
 
-    fclose($output);
+    echo "</table>";
     exit;
 }
-
 /* ======================
    FUNGSI ESCAPE
    ====================== */
