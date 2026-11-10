@@ -4,11 +4,9 @@
    Dipanggil melalui dashboard.php
    ===================================================== */
 
-// Ambil session login
 $user_id = (int)($_SESSION['user_id'] ?? 0);
 $role = strtolower(trim($_SESSION['role'] ?? ''));
 
-// Samakan format role
 $role = str_replace([' ', '-'], '_', $role);
 
 /* =====================================================
@@ -36,7 +34,7 @@ if ($role === 'admin') {
 
 } elseif ($role === 'wali_kelas') {
 
-    // Wali kelas hanya melihat laporan kelasnya sendiri
+    // Wali kelas melihat semua laporan di kelasnya
     $filter_sql = "
         WHERE EXISTS (
             SELECT 1
@@ -72,8 +70,6 @@ if ($role === 'admin') {
         Berikut merupakan data pelanggaran siswa yang tersimpan
         dalam sistem.
     </p>
-
-    <!-- TOMBOL CETAK DAN EXPORT -->
 
     <div class="d-flex flex-wrap gap-2 mb-3 no-print">
 
@@ -120,6 +116,7 @@ if ($role === 'admin') {
                     <th>Pelanggaran</th>
                     <th>Poin</th>
                     <th>Tanggal</th>
+                    <th>Guru Pencatat</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -129,7 +126,7 @@ if ($role === 'admin') {
             <?php
 
             /* =========================
-               PAGINATION 10 DATA
+               PAGINATION
                ========================= */
 
             $batas = 10;
@@ -138,10 +135,8 @@ if ($role === 'admin') {
                 ? max(1, (int)$_GET['halaman_laporan'])
                 : 1;
 
-
             /* =========================
                HITUNG TOTAL DATA
-               SESUAI ROLE
                ========================= */
 
             $total_query = mysqli_query($koneksi, "
@@ -165,12 +160,10 @@ if ($role === 'admin') {
                 $total_query
             )['total'];
 
-
             $total_halaman = max(
                 1,
                 (int)ceil($total_data / $batas)
             );
-
 
             /* =========================
                VALIDASI HALAMAN
@@ -185,10 +178,8 @@ if ($role === 'admin') {
 
             $no = $posisi + 1;
 
-
             /* =========================
                AMBIL DATA LAPORAN
-               SESUAI ROLE
                ========================= */
 
             $q = mysqli_query($koneksi, "
@@ -200,7 +191,12 @@ if ($role === 'admin') {
                     COALESCE(
                         NULLIF(s.nama, ''),
                         ps.nama_siswa
-                    ) AS nama_tampil
+                    ) AS nama_tampil,
+
+                    COALESCE(
+                        NULLIF(ps.nama_guru, ''),
+                        '-'
+                    ) AS guru_pencatat
 
                 FROM t_pelanggaran_siswa ps
 
@@ -223,7 +219,6 @@ if ($role === 'admin') {
                     . mysqli_error($koneksi)
                 );
             }
-
 
             /* =========================
                TAMPILKAN DATA
@@ -261,6 +256,12 @@ if ($role === 'admin') {
                         <?= e($r['tanggal']) ?>
                     </td>
 
+                    <!-- GURU YANG MENCATAT PELANGGARAN -->
+
+                    <td>
+                        <?= e($r['guru_pencatat']) ?>
+                    </td>
+
                     <td>
                         <?= e($r['status']) ?>
                     </td>
@@ -277,7 +278,7 @@ if ($role === 'admin') {
 
                 <tr>
 
-                    <td colspan="7" class="text-center text-muted">
+                    <td colspan="8" class="text-center text-muted">
                         Belum ada data pelanggaran siswa.
                     </td>
 
@@ -291,9 +292,8 @@ if ($role === 'admin') {
 
     </div>
 
-
     <!-- =================================================
-         PAGINATION DI SISI KANAN
+         PAGINATION
          ================================================= -->
 
     <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3 no-print">
@@ -312,8 +312,6 @@ if ($role === 'admin') {
 
             <ul class="pagination pagination-sm mb-0">
 
-                <!-- SEBELUMNYA -->
-
                 <li class="page-item <?= ($halaman <= 1) ? 'disabled' : '' ?>">
 
                     <a
@@ -324,9 +322,6 @@ if ($role === 'admin') {
                     </a>
 
                 </li>
-
-
-                <!-- NOMOR HALAMAN -->
 
                 <?php
 
@@ -358,9 +353,6 @@ if ($role === 'admin') {
 
                 <?php endfor; ?>
 
-
-                <!-- BERIKUTNYA -->
-
                 <li class="page-item <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>">
 
                     <a
@@ -379,7 +371,6 @@ if ($role === 'admin') {
     </div>
 
 </div>
-
 
 <!-- =====================================================
      STYLE CETAK

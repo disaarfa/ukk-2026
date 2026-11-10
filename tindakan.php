@@ -1,231 +1,253 @@
-<?php /* Halaman tindakan; dipanggil melalui dashboard.php */ ?>
 
+<?php /* Halaman tindakan; dipanggil melalui dashboard.php */ ?>
 
 <div class="table-box">
 
-<h4>
-Data Tindakan Pelanggaran
-</h4>
+    <h4>Data Tindakan Pelanggaran</h4>
 
-<div class="table-responsive">
+    <div class="table-responsive">
 
-<table class="table table-bordered">
+        <table class="table table-bordered">
 
-<thead>
+            <thead>
 
-<tr>
-<th>No</th>
-<th>Siswa</th>
-<th>Pelanggaran</th>
-<th>Poin</th>
-<th>Tindakan</th>
-<th>Status</th>
-<th>Aksi</th>
-</tr>
+                <tr>
+                    <th>No</th>
+                    <th>Siswa</th>
+                    <th>Guru Pencatat</th>
+                    <th>Pelanggaran</th>
+                    <th>Poin</th>
+                    <th>Tindakan</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
 
-</thead>
+            </thead>
 
-<tbody>
+            <tbody>
 
-<?php
+                <?php
 
-/* =========================
-   PAGINATION 10 DATA
-   ========================= */
+                /* =========================
+                   PAGINATION 10 DATA
+                   ========================= */
 
-$batas = 10;
+                $batas = 10;
 
-$halaman = isset($_GET['halaman_tindakan'])
-    ? max(1, (int) $_GET['halaman_tindakan'])
-    : 1;
+                $halaman = isset($_GET['halaman_tindakan'])
+                    ? max(1, (int) $_GET['halaman_tindakan'])
+                    : 1;
 
-/* Hitung total data */
+                /* HITUNG TOTAL DATA */
 
-$total_query = mysqli_query($koneksi, "
-    SELECT COUNT(*) AS total
-    FROM t_pelanggaran_siswa
-");
+                $total_query = mysqli_query($koneksi, "
+                    SELECT COUNT(*) AS total
+                    FROM t_pelanggaran_siswa
+                ");
 
-$total_data = (int) mysqli_fetch_assoc($total_query)['total'];
+                $total_data = (int) mysqli_fetch_assoc($total_query)['total'];
 
-$total_halaman = max(
-    1,
-    (int) ceil($total_data / $batas)
-);
+                $total_halaman = max(
+                    1,
+                    (int) ceil($total_data / $batas)
+                );
 
-/* Pastikan halaman valid */
+                /* PASTIKAN HALAMAN VALID */
 
-$halaman = min($halaman, $total_halaman);
+                $halaman = min($halaman, $total_halaman);
 
-/* Tentukan posisi data */
+                /* TENTUKAN POSISI DATA */
 
-$posisi = ($halaman - 1) * $batas;
+                $posisi = ($halaman - 1) * $batas;
 
-$no = $posisi + 1;
+                $no = $posisi + 1;
 
-/* Ambil data sesuai halaman */
+                /* AMBIL DATA */
 
-$q = mysqli_query($koneksi, "
-    SELECT *
-    FROM t_pelanggaran_siswa
-    ORDER BY id DESC
-    LIMIT $posisi, $batas
-");
+                $q = mysqli_query($koneksi, "
+                    SELECT *
+                    FROM t_pelanggaran_siswa
+                    ORDER BY id DESC
+                    LIMIT $posisi, $batas
+                ");
 
-while ($r = mysqli_fetch_assoc($q)):
+                if (!$q) {
+                    die("Query tindakan gagal: " . mysqli_error($koneksi));
+                }
 
-?>
+                if (mysqli_num_rows($q) > 0):
 
-<tr>
+                    while ($r = mysqli_fetch_assoc($q)):
 
-<td><?= $no++ ?></td>
+                ?>
 
-<td><?= e($r['nama_siswa']) ?></td>
+                <tr>
 
-<td><?= e($r['nama_pelanggaran']) ?></td>
+                    <td><?= $no++ ?></td>
 
-<td><?= e($r['poin']) ?></td>
+                    <td><?= e($r['nama_siswa']) ?></td>
 
-<td>
+                    <td>
+                        <?= e($r['nama_guru'] ?: '-') ?>
+                    </td>
 
-<form method="POST">
+                    <td><?= e($r['nama_pelanggaran']) ?></td>
 
-<input
-type="hidden"
-name="id"
-value="<?= $r['id'] ?>"
->
+                    <td><?= e($r['poin']) ?></td>
 
-<input
-type="text"
-name="tindakan"
-class="form-control form-control-sm"
-value="<?= e($r['tindakan']) ?>"
->
+                    <td>
 
-</td>
+                        <form method="POST">
 
-<td>
+                            <input
+                                type="hidden"
+                                name="id"
+                                value="<?= (int)$r['id'] ?>"
+                            >
 
-<select
-name="status"
-class="form-select form-select-sm"
->
+                            <input
+                                type="text"
+                                name="tindakan"
+                                class="form-control form-control-sm"
+                                value="<?= e($r['tindakan']) ?>"
+                            >
 
-<option
-value="Pending"
-<?= $r['status'] === 'Pending' ? 'selected' : '' ?>>
-Pending
-</option>
+                    </td>
 
-<option
-value="Proses"
-<?= $r['status'] === 'Proses' ? 'selected' : '' ?>>
-Proses
-</option>
+                    <td>
 
-<option
-value="Selesai"
-<?= $r['status'] === 'Selesai' ? 'selected' : '' ?>>
-Selesai
-</option>
+                        <select
+                            name="status"
+                            class="form-select form-select-sm"
+                        >
 
-</select>
+                            <option
+                                value="Pending"
+                                <?= $r['status'] === 'Pending' ? 'selected' : '' ?>
+                            >
+                                Pending
+                            </option>
 
-</td>
+                            <option
+                                value="Proses"
+                                <?= $r['status'] === 'Proses' ? 'selected' : '' ?>
+                            >
+                                Proses
+                            </option>
 
-<td>
+                            <option
+                                value="Selesai"
+                                <?= $r['status'] === 'Selesai' ? 'selected' : '' ?>
+                            >
+                                Selesai
+                            </option>
 
-<button
-class="btn btn-soft btn-sm"
-type="submit"
->
-Simpan
-</button>
+                        </select>
 
-</form>
+                    </td>
 
-</td>
+                    <td>
 
-</tr>
+                        <button
+                            class="btn btn-soft btn-sm"
+                            type="submit"
+                        >
+                            Simpan
+                        </button>
 
-<?php endwhile; ?>
+                        </form>
 
-</tbody>
+                    </td>
 
-</table>
+                </tr>
 
-</div>
+                <?php
 
+                    endwhile;
 
-<!-- PAGINATION DI SISI KANAN -->
+                else:
 
-<div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3">
+                ?>
 
-    <small class="text-muted">
-        Halaman <?= $halaman ?>
-        dari <?= $total_halaman ?>
-        (<?= $total_data ?> data)
-    </small>
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            Belum ada data tindakan pelanggaran.
+                        </td>
+                    </tr>
 
-    <nav aria-label="Pagination data tindakan">
+                <?php endif; ?>
 
-        <ul class="pagination pagination-sm mb-0">
+            </tbody>
 
-            <!-- Tombol Sebelumnya -->
+        </table>
 
-            <li class="page-item <?= ($halaman <= 1) ? 'disabled' : '' ?>">
+    </div>
 
-                <a
-                    class="page-link"
-                    href="dashboard.php?page=tindakan&halaman_tindakan=<?= max(1, $halaman - 1) ?>"
-                >
-                    &laquo;
-                </a>
 
-            </li>
+    <!-- =========================
+         PAGINATION DI SISI KANAN
+         ========================= -->
 
-            <!-- Nomor Halaman -->
+    <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-3">
 
-            <?php
+        <small class="text-muted">
+            Halaman <?= $halaman ?>
+            dari <?= $total_halaman ?>
+            (<?= $total_data ?> data)
+        </small>
 
-            $mulai = max(1, $halaman - 2);
-            $akhir = min($total_halaman, $halaman + 2);
+        <nav aria-label="Pagination data tindakan">
 
-            for ($i = $mulai; $i <= $akhir; $i++):
+            <ul class="pagination pagination-sm mb-0">
 
-            ?>
+                <li class="page-item <?= ($halaman <= 1) ? 'disabled' : '' ?>">
 
-            <li class="page-item <?= ($i == $halaman) ? 'active' : '' ?>">
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=tindakan&halaman_tindakan=<?= max(1, $halaman - 1) ?>"
+                    >
+                        &laquo;
+                    </a>
 
-                <a
-                    class="page-link"
-                    href="dashboard.php?page=tindakan&halaman_tindakan=<?= $i ?>"
-                >
-                    <?= $i ?>
-                </a>
+                </li>
 
-            </li>
+                <?php
 
-            <?php endfor; ?>
+                $mulai = max(1, $halaman - 2);
+                $akhir = min($total_halaman, $halaman + 2);
 
-            <!-- Tombol Berikutnya -->
+                for ($i = $mulai; $i <= $akhir; $i++):
 
-            <li class="page-item <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>">
+                ?>
 
-                <a
-                    class="page-link"
-                    href="dashboard.php?page=tindakan&halaman_tindakan=<?= min($total_halaman, $halaman + 1) ?>"
-                >
-                    &raquo;
-                </a>
+                    <li class="page-item <?= ($i == $halaman) ? 'active' : '' ?>">
 
-            </li>
+                        <a
+                            class="page-link"
+                            href="dashboard.php?page=tindakan&halaman_tindakan=<?= $i ?>"
+                        >
+                            <?= $i ?>
+                        </a>
 
-        </ul>
+                    </li>
 
-    </nav>
+                <?php endfor; ?>
 
-</div>
+                <li class="page-item <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>">
+
+                    <a
+                        class="page-link"
+                        href="dashboard.php?page=tindakan&halaman_tindakan=<?= min($total_halaman, $halaman + 1) ?>"
+                    >
+                        &raquo;
+                    </a>
+
+                </li>
+
+            </ul>
+
+        </nav>
+
+    </div>
 
 </div>

@@ -65,9 +65,11 @@ $menu_guru = [
     'rekap_poin' => 'Rekap Poin'
 ];
 $menu_wali_kelas = [
+    'catat_pelanggaran' => 'Catat Pelanggaran',
+    'tindakan' => 'Tindakan',
     'laporan' => 'Laporan',
-    'rekap_poin' => 'Rekap Poin',
-     'riwayat' => 'Riwayat'
+    'riwayat' => 'Riwayat',
+    'rekap_poin' => 'Rekap Poin'
 ];
 
 $allowed_pages = [

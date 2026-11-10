@@ -39,7 +39,9 @@ if ($role === 'admin' || $role === 'guru') {
 
 }
 
-/* PAGINATION */
+/* =========================
+   PAGINATION
+   ========================= */
 
 $batas = 10;
 
@@ -68,13 +70,16 @@ $halaman = min($halaman, $total_halaman);
 $posisi = ($halaman - 1) * $batas;
 $no = $posisi + 1;
 
-/* AMBIL DATA RIWAYAT */
+/* =========================
+   AMBIL DATA RIWAYAT
+   ========================= */
 
 $q = mysqli_query($koneksi, "
     SELECT
         ps.id,
         ps.tanggal,
         ps.nama_siswa,
+        ps.nama_guru,
         ps.nama_kelas,
         ps.nama_pelanggaran,
         ps.poin,
@@ -135,6 +140,7 @@ if (!$q) {
                     <th>No</th>
                     <th>Tanggal</th>
                     <th>Siswa</th>
+                    <th>Guru Pencatat</th>
                     <th>Kelas</th>
                     <th>Pelanggaran</th>
                     <th>Poin</th>
@@ -150,14 +156,27 @@ if (!$q) {
                     <?php while ($r = mysqli_fetch_assoc($q)): ?>
 
                         <tr>
+
                             <td><?= $no++ ?></td>
+
                             <td><?= e($r['tanggal']) ?></td>
+
                             <td><?= e($r['nama_siswa']) ?></td>
+
+                            <td>
+                                <?= e($r['nama_guru'] ?: '-') ?>
+                            </td>
+
                             <td><?= e($r['nama_kelas']) ?></td>
+
                             <td><?= e($r['nama_pelanggaran']) ?></td>
+
                             <td><?= e($r['poin']) ?></td>
+
                             <td><?= e($r['tindakan']) ?></td>
+
                             <td><?= e($r['status']) ?></td>
+
                         </tr>
 
                     <?php endwhile; ?>
@@ -165,7 +184,7 @@ if (!$q) {
                 <?php else: ?>
 
                     <tr>
-                        <td colspan="8" class="text-center text-muted">
+                        <td colspan="9" class="text-center text-muted">
                             Belum ada riwayat pelanggaran.
                         </td>
                     </tr>
