@@ -1,4 +1,3 @@
-
 <?php
 /* HALAMAN TINDAKAN PELANGGARAN */
 

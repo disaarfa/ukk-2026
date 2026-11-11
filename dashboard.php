@@ -1170,139 +1170,226 @@ if (
     exit;
 }
 
-/* ======================
-   CATAT PELANGGARAN
-   ====================== */
 
-if (
-    ($role === 'admin' || $role === 'guru') &&
+/* =========================
+   CATAT PELANGGARAN SISWA
+   GURU DAN WALI KELAS
+   ========================= */
+
+   if (
+    in_array($role, ['admin', 'guru', 'wali_kelas'], true) &&
     $page === 'catat_pelanggaran' &&
     $_SERVER['REQUEST_METHOD'] === 'POST'
 ) {
-    $siswa_id = (int)($_POST['siswa_id'] ?? 0);
-    $pel_id = (int)($_POST['pelanggaran_id'] ?? 0);
 
-    $tanggal = mysqli_real_escape_string(
-        $koneksi,
-        $_POST['tanggal'] ?? date('Y-m-d')
-    );
+    try {
 
-    $keterangan = mysqli_real_escape_string(
-        $koneksi,
-        trim($_POST['keterangan'] ?? '')
-    );
+        $siswa_id = (int)($_POST['siswa_id'] ?? 0);
+        $kelas_id = (int)($_POST['kelas_id'] ?? 0);
+        $pel_id = (int)($_POST['pelanggaran_id'] ?? 0);
 
-    $guru_id = 0;
+        $tanggal = trim($_POST['tanggal'] ?? '');
+        $keterangan = trim($_POST['keterangan'] ?? '');
 
-    $qg = mysqli_query($koneksi, "
-        SELECT id FROM t_guru
-        WHERE user_id='$user_id'
-        LIMIT 1
-    ");
+        /* VALIDASI INPUT */
 
-    if ($qg && mysqli_num_rows($qg) > 0) {
-        $dg = mysqli_fetch_assoc($qg);
-        $guru_id = (int)$dg['id'];
-    }
-
-    if ($guru_id === 0) {
-        $qg2 = mysqli_query(
-            $koneksi,
-            "SELECT id FROM t_guru
-             WHERE status_aktif=1
-             ORDER BY id ASC
-             LIMIT 1"
-        );
-
-        if ($qg2 && mysqli_num_rows($qg2) > 0) {
-            $dg2 = mysqli_fetch_assoc($qg2);
-            $guru_id = (int)$dg2['id'];
+        if ($siswa_id <= 0 || $kelas_id <= 0 || $pel_id <= 0) {
+            throw new Exception("Kelas, siswa, dan jenis pelanggaran wajib dipilih.");
         }
-    }
 
-    $qs = mysqli_query($koneksi, "
-        SELECT
-            ks.tahun_ajaran_id,
-            ks.kelas_id,
-            s.nama AS nama_siswa,
-            k.nama AS nama_kelas
-        FROM t_kelas_siswa ks
-        JOIN t_siswa s ON ks.siswa_id=s.id
-        JOIN t_kelas k ON ks.kelas_id=k.id
-        WHERE ks.siswa_id='$siswa_id'
-        AND ks.status_aktif=1
-        LIMIT 1
-    ");
+        $tanggal_valid = DateTime::createFromFormat('!Y-m-d', $tanggal);
 
-    $siswa_data = $qs ? mysqli_fetch_assoc($qs) : null;
+        if (
+            !$tanggal_valid ||
+            $tanggal_valid->format('Y-m-d') !== $tanggal
+        ) {
+            throw new Exception("Tanggal pelanggaran tidak valid.");
+        }
 
-    $qp = mysqli_query($koneksi, "
-        SELECT * FROM t_pelanggaran
-        WHERE id='$pel_id'
-        LIMIT 1
-    ");
+        /* =========================
+           AMBIL DATA GURU PENCATAT
+           ========================= */
 
-    $pel_data = $qp ? mysqli_fetch_assoc($qp) : null;
+        $stmt = mysqli_prepare($koneksi, "
+            SELECT id, nama
+            FROM t_guru
+            WHERE user_id = ?
+            AND status_aktif = 1
+            LIMIT 1
+        ");
 
-    if ($siswa_data && $pel_data && $guru_id > 0) {
-        $nama_siswa_db = mysqli_real_escape_string(
-            $koneksi,
-            $siswa_data['nama_siswa']
+        mysqli_stmt_bind_param($stmt, "i", $user_id);
+        mysqli_stmt_execute($stmt);
+
+        $hasil_guru = mysqli_stmt_get_result($stmt);
+        $guru_data = mysqli_fetch_assoc($hasil_guru);
+
+        mysqli_stmt_close($stmt);
+
+        if (!$guru_data) {
+            throw new Exception(
+                "Akun belum terhubung dengan data guru. Hubungi admin."
+            );
+        }
+
+        $guru_id = (int)$guru_data['id'];
+        $nama_guru_db = $nama;
+
+        /* =========================
+           CEK SISWA DAN KELAS
+           ========================= */
+
+        $stmt = mysqli_prepare($koneksi, "
+            SELECT
+                ks.tahun_ajaran_id,
+                ks.kelas_id,
+                s.nama AS nama_siswa,
+                k.nama AS nama_kelas
+
+            FROM t_kelas_siswa ks
+
+            INNER JOIN t_siswa s
+                ON s.id = ks.siswa_id
+
+            INNER JOIN t_kelas k
+                ON k.id = ks.kelas_id
+
+            WHERE ks.siswa_id = ?
+            AND ks.kelas_id = ?
+            AND ks.status_aktif = 1
+            AND s.status_aktif = 1
+            AND k.status_aktif = 1
+
+            ORDER BY ks.id DESC
+            LIMIT 1
+        ");
+
+        mysqli_stmt_bind_param(
+            $stmt,
+            "ii",
+            $siswa_id,
+            $kelas_id
         );
 
-        $nama_kelas_db = mysqli_real_escape_string(
-            $koneksi,
-            $siswa_data['nama_kelas']
-        );
+        mysqli_stmt_execute($stmt);
 
-        $nama_pel_db = mysqli_real_escape_string(
-            $koneksi,
-            $pel_data['nama']
-        );
+        $hasil_siswa = mysqli_stmt_get_result($stmt);
+        $siswa_data = mysqli_fetch_assoc($hasil_siswa);
 
-        $nama_guru_db = mysqli_real_escape_string(
-            $koneksi,
-            $nama
-        );
+        mysqli_stmt_close($stmt);
 
+        if (!$siswa_data) {
+            throw new Exception(
+                "Siswa tidak ditemukan pada kelas yang dipilih."
+            );
+        }
+
+        /* =========================
+           AMBIL JENIS PELANGGARAN
+           ========================= */
+
+        $stmt = mysqli_prepare($koneksi, "
+            SELECT id, nama, poin, pelanggaran_kategori_id
+            FROM t_pelanggaran
+            WHERE id = ?
+            AND status_aktif = 1
+            LIMIT 1
+        ");
+
+        mysqli_stmt_bind_param($stmt, "i", $pel_id);
+        mysqli_stmt_execute($stmt);
+
+        $hasil_pelanggaran = mysqli_stmt_get_result($stmt);
+        $pel_data = mysqli_fetch_assoc($hasil_pelanggaran);
+
+        mysqli_stmt_close($stmt);
+
+        if (!$pel_data) {
+            throw new Exception(
+                "Jenis pelanggaran tidak ditemukan atau tidak aktif."
+            );
+        }
+
+        /* =========================
+           SIMPAN PELANGGARAN BARU
+           ========================= */
+
+        $tahun_id = (int)$siswa_data['tahun_ajaran_id'];
+        $nama_siswa_db = $siswa_data['nama_siswa'];
+        $nama_kelas_db = $siswa_data['nama_kelas'];
+
+        $nama_pel_db = $pel_data['nama'];
         $kategori_id = (int)$pel_data['pelanggaran_kategori_id'];
         $poin = (int)$pel_data['poin'];
 
-        mysqli_query($koneksi, "
+        mysqli_begin_transaction($koneksi);
+
+        $stmt = mysqli_prepare($koneksi, "
             INSERT INTO t_pelanggaran_siswa
             (
-                tahun_ajaran_id, siswa_id, nama_siswa,
-                kelas_id, nama_kelas, pelanggaran_id,
-                nama_pelanggaran, pelanggaran_kategori_id,
-                guru_id, nama_guru, tanggal, keterangan,
-                poin, tindakan, status, created_at, updated_at
+                tahun_ajaran_id,
+                siswa_id,
+                nama_siswa,
+                kelas_id,
+                nama_kelas,
+                pelanggaran_id,
+                nama_pelanggaran,
+                pelanggaran_kategori_id,
+                guru_id,
+                nama_guru,
+                tanggal,
+                keterangan,
+                poin,
+                tindakan,
+                status,
+                created_at,
+                updated_at
             )
             VALUES
-            (
-                '{$siswa_data['tahun_ajaran_id']}',
-                '$siswa_id',
-                '$nama_siswa_db',
-                '{$siswa_data['kelas_id']}',
-                '$nama_kelas_db',
-                '$pel_id',
-                '$nama_pel_db',
-                '$kategori_id',
-                '$guru_id',
-                '$nama_guru_db',
-                '$tanggal',
-                '$keterangan',
-                '$poin',
-                '',
-                'Pending',
-                NOW(),
-                NOW()
-            )
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', 'Pending', NOW(), NOW())
         ");
-    }
 
-    header("Location: dashboard.php?page=catat_pelanggaran");
-    exit;
+        
+mysqli_stmt_bind_param(
+    $stmt,
+    "iisisisiisssi",
+    $tahun_id,
+    $siswa_id,
+    $nama_siswa_db,
+    $kelas_id,
+    $nama_kelas_db,
+    $pel_id,
+    $nama_pel_db,
+    $kategori_id,
+    $guru_id,
+    $nama_guru_db,
+    $tanggal,
+    $keterangan,
+    $poin
+);
+
+
+        if (!mysqli_stmt_execute($stmt)) {
+            throw new Exception(
+                mysqli_stmt_error($stmt)
+            );
+        }
+
+        mysqli_stmt_close($stmt);
+
+        mysqli_commit($koneksi);
+
+        header("Location: dashboard.php?page=catat_pelanggaran&berhasil=1");
+        exit;
+
+    } catch (Throwable $e) {
+
+        mysqli_rollback($koneksi);
+
+        $error = "Pelanggaran gagal disimpan: " . $e->getMessage();
+    }
 }
+
 
 /* ===================
    EDIT TINDAKAN
